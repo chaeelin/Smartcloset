@@ -58,6 +58,8 @@ dependencies {
 	// profile
 	implementation 'org.springframework.boot:spring-boot-starter-thymeleaf'
 
+	implementation 'org.springframework.boot:spring-boot-starter-data-redis'
+	implementation 'org.apache.commons:commons-lang3:3.16.0'
 }
 
 tasks.named('test') {
