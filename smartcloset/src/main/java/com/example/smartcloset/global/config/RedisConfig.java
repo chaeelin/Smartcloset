@@ -1,4 +1,4 @@
-package com.example.smartcloset.config;
+package com.example.smartcloset.global.config;
 
 import lombok.Setter;
 import org.springframework.boot.context.properties.ConfigurationProperties;

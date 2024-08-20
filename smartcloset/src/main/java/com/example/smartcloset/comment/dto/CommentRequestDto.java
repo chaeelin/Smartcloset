@@ -1,4 +1,4 @@
-package com.example.smartcloset.dto;
+package com.example.smartcloset.comment.dto;
 
 import lombok.Getter;
 import lombok.Setter;

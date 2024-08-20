@@ -1,11 +1,12 @@
-package com.example.smartcloset.service;
+package com.example.smartcloset.comment.service;
 
 import com.example.smartcloset.User.entity.User;
 import com.example.smartcloset.User.repository.UserRepository;
-import com.example.smartcloset.dto.CommentRequestDto;
-import com.example.smartcloset.entity.CommentEntity;
+import com.example.smartcloset.comment.dto.CommentRequestDto;
+import com.example.smartcloset.comment.entity.CommentEntity;
+import com.example.smartcloset.global.common.service.RedisService;
 import com.example.smartcloset.model.Post;
-import com.example.smartcloset.repository.CommentRepository;
+import com.example.smartcloset.comment.repository.CommentRepository;
 import com.example.smartcloset.repository.PostRepository;
 import jakarta.transaction.Transactional;
 import lombok.RequiredArgsConstructor;

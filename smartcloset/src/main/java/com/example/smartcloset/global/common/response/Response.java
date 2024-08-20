@@ -1,4 +1,4 @@
-package com.example.smartcloset.dto;
+package com.example.smartcloset.global.common.response;
 
 import org.springframework.http.ResponseEntity;
 

@@ -1,6 +1,6 @@
-package com.example.smartcloset.repository;
+package com.example.smartcloset.comment.repository;
 
-import com.example.smartcloset.entity.CommentEntity;
+import com.example.smartcloset.comment.entity.CommentEntity;
 import lombok.RequiredArgsConstructor;
 import org.springframework.jdbc.core.BatchPreparedStatementSetter;
 import org.springframework.jdbc.core.JdbcTemplate;

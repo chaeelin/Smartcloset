@@ -1,6 +1,6 @@
-package com.example.smartcloset.repository;
+package com.example.smartcloset.comment.repository;
 
-import com.example.smartcloset.entity.CommentEntity;
+import com.example.smartcloset.comment.entity.CommentEntity;
 
 import java.util.List;
 import java.util.Map;

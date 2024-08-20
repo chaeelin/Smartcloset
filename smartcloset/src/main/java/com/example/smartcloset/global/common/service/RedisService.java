@@ -1,7 +1,6 @@
-package com.example.smartcloset.service;
+package com.example.smartcloset.global.common.service;
 
 import lombok.RequiredArgsConstructor;
-import org.apache.commons.lang3.tuple.Pair;
 import org.springframework.data.redis.core.StringRedisTemplate;
 import org.springframework.stereotype.Service;
 

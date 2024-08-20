@@ -1,8 +1,8 @@
-package com.example.smartcloset.controller;
+package com.example.smartcloset.comment.controller;
 
-import com.example.smartcloset.dto.CommentRequestDto;
-import com.example.smartcloset.dto.Response;
-import com.example.smartcloset.service.CommentService;
+import com.example.smartcloset.comment.dto.CommentRequestDto;
+import com.example.smartcloset.global.common.response.Response;
+import com.example.smartcloset.comment.service.CommentService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
