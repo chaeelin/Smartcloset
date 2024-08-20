@@ -1,5 +1,4 @@
-package com.example.smartcloset.config;
-
+package com.example.smartcloset.chat.config;
 
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.context.annotation.Bean;

@@ -1,0 +1,56 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Weather App</title>
+</head>
+<body>
+<h1>현재 날씨</h1>
+<div id="weather"></div>
+
+<script>
+    const API_KEY = 'a023a55208e70df607c13cb4b444d084';
+
+    function onGeoOk(position) {
+        const latitude = position.coords.latitude;
+        const longitude = position.coords.longitude;
+
+        fetch(`https://api.openweathermap.org/data/2.5/weather?lat=${latitude}&lon=${longitude}&appid=${API_KEY}&units=metric`)
+            .then(response => response.json())
+            .then(data => {
+                const weatherDiv = document.getElementById('weather');
+                const temperature = Math.round(data.main.temp); // 소수점 반올림
+                weatherDiv.innerHTML = `온도: ${temperature}°C, 날씨: ${data.weather[0].main}`;
+
+                weatherDiv.innerHTML = `온도: ${temperature}°C, 날씨: ${weatherDescription}`;
+
+                // 백엔드로 위치 정보와 날씨 정보를 POST 요청
+                // fetch('/bot/chat', {
+                //     method: 'POST',
+                //     headers: {
+                //         'Content-Type': 'application/json',
+                //     },
+                //     body: JSON.stringify({
+                //         prompt: `The current temperature is ${temperature}°C and the weather is ${weatherDescription}.`
+                //     }),
+                // })
+                //     .then(response => response.text())
+                //     .then(data => {
+                //         console.log('GPT Response:', data);
+                //     })
+                //     .catch((error) => {
+                //         console.error('Error:', error);
+                //     });
+
+            });
+    }
+
+    function onGeoError() {
+        alert("에러!");
+    }
+
+    navigator.geolocation.getCurrentPosition(onGeoOk, onGeoError);
+</script>
+</body>
+</html>
