@@ -1,9 +1,7 @@
-package com.example.smartcloset.controller;
+package com.example.smartcloset.board.controller;
 
-import com.example.smartcloset.model.Post;
-import com.example.smartcloset.service.PostService;
-import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.data.domain.Page;
+import com.example.smartcloset.board.model.Post;
+import com.example.smartcloset.board.service.PostService;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
@@ -12,8 +10,12 @@ import java.util.List;
 @RequestMapping("/api/posts")
 public class PostController {
 
-    @Autowired
-    private PostService postService;
+    private final PostService postService;
+
+    // 생성자 주입
+    public PostController(PostService postService) {
+        this.postService = postService;
+    }
 
     @GetMapping
     public List<Post> getAllPosts() {
@@ -30,20 +32,13 @@ public class PostController {
         return postService.searchPostsByTitle(title);
     }
 
-    @GetMapping("/search/page")
-    public Page<Post> searchPostsWithPaging(
-            @RequestParam String title,
-            @RequestParam int page,
-            @RequestParam int size
-    ) {
-        return postService.searchPostsByTitleWithPaging(title, page, size);
-    }
+    // 페이징 메서드 제거
 
     @PostMapping
     public Post createPost(@RequestBody Post post) {
         return postService.savePost(post);
     }
-    // 게시물 업데이트 엔드포인트
+
     @PutMapping("/{id}")
     public Post updatePost(@PathVariable Long id, @RequestBody Post updatedPost) {
         return postService.updatePost(id, updatedPost);
@@ -59,5 +54,9 @@ public class PostController {
         postService.deletePost(id);
     }
 
-    // Additional endpoints (e.g., update, delete)
+    // 새로운 메서드 추가: 마지막으로 로드된 게시물 이후의 게시물들을 불러오는 메서드
+    @GetMapping("/loadMore")
+    public List<Post> loadMorePosts(@RequestParam Long lastPostId, @RequestParam int limit) {
+        return postService.getPostsAfterId(lastPostId, limit);
+    }
 }

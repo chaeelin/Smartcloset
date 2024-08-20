@@ -1,11 +1,11 @@
-package com.example.smartcloset.service;
+package com.example.smartcloset.board.service;
 
-import com.example.smartcloset.model.Post;
-import com.example.smartcloset.repository.PostRepository;
-import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.data.domain.Page;
+import com.example.smartcloset.board.event.LikeEvent;
+import com.example.smartcloset.board.event.TopPostEvent;
+import com.example.smartcloset.board.model.Post;
+import com.example.smartcloset.board.repository.PostRepository;
+import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.data.domain.PageRequest;
-import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 
 import java.util.List;
@@ -13,8 +13,14 @@ import java.util.List;
 @Service
 public class PostService {
 
-    @Autowired
-    private PostRepository postRepository;
+    private final PostRepository postRepository;
+    private final ApplicationEventPublisher eventPublisher;
+
+    // 생성자를 통한 의존성 주입
+    public PostService(PostRepository postRepository, ApplicationEventPublisher eventPublisher) {
+        this.postRepository = postRepository;
+        this.eventPublisher = eventPublisher;
+    }
 
     public List<Post> getAllPosts() {
         return postRepository.findAll();
@@ -28,16 +34,8 @@ public class PostService {
         return postRepository.findByTitleContainingIgnoreCase(title);
     }
 
-    // 페이징을 고려한 게시물 검색
-    public Page<Post> searchPostsByTitleWithPaging(String title, int page, int size) {
-        Pageable pageable = PageRequest.of(page, size);
-        return postRepository.findByTitleContainingIgnoreCase(title, pageable);
-    }
-
     public Post savePost(Post post) {
         return postRepository.save(post);
-
-
     }
 
     // 게시물 업데이트 메서드
@@ -53,11 +51,20 @@ public class PostService {
         return postRepository.save(existingPost);
     }
 
+    // 좋아요 수 증가 및 이벤트 발생
     public void increasePostLikes(Long id) {
         Post post = postRepository.findById(id)
                 .orElseThrow(() -> new RuntimeException("Post not found"));
         post.setLikes(post.getLikes() + 1);
         postRepository.save(post);
+
+        // 좋아요 이벤트 발생
+        eventPublisher.publishEvent(new LikeEvent(this, post.getId()));
+
+        // 특정 수 이상의 좋아요일 경우 상단 노출 이벤트 발생
+        if (post.getLikes() >= 5) { // 5는 예시 값입니다. 적절한 수치를 설정하세요.
+            eventPublisher.publishEvent(new TopPostEvent(this, post.getId()));
+        }
     }
 
     public void deletePost(Long id) {
@@ -67,5 +74,10 @@ public class PostService {
         postRepository.deleteById(id);
     }
 
-    // Additional business logic (e.g., update, delete)
+    // 무한 스크롤을 위한 메서드 추가
+    public List<Post> getPostsAfterId(Long lastPostId, int limit) {
+        return postRepository.findByIdGreaterThanOrderByIdAsc(lastPostId, PageRequest.of(0, limit));
+    }
+
+    // 추가적인 비즈니스 로직 (예: 업데이트, 삭제 등)
 }
