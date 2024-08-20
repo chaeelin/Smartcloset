@@ -60,6 +60,10 @@ dependencies {
 
 	implementation 'org.springframework.boot:spring-boot-starter-data-redis'
 	implementation 'org.apache.commons:commons-lang3:3.16.0'
+
+	implementation 'org.springframework.boot:spring-boot-starter-websocket'
+	implementation 'com.google.firebase:firebase-admin:6.8.1'
+	implementation group: 'com.squareup.okhttp3', name: 'okhttp', version: '4.2.2'
 }
 
 tasks.named('test') {
