@@ -12,4 +12,7 @@ public interface CommentRepository extends JpaRepository<CommentEntity, Long>, C
 
     @Query("select c.id from CommentEntity c where c.parent_id=?1 limit 1")
     boolean existsByParentId(Long commentId);
+
+    @Query("delete from CommentEntity c where c.post.id=?1")
+    void deleteByPostId(Long postId);
 }

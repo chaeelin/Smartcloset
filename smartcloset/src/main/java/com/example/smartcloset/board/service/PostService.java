@@ -4,6 +4,7 @@ import com.example.smartcloset.board.event.LikeEvent;
 import com.example.smartcloset.board.event.TopPostEvent;
 import com.example.smartcloset.board.model.Post;
 import com.example.smartcloset.board.repository.PostRepository;
+import com.example.smartcloset.comment.repository.CommentRepository;
 import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.stereotype.Service;
@@ -15,11 +16,13 @@ public class PostService {
 
     private final PostRepository postRepository;
     private final ApplicationEventPublisher eventPublisher;
+    private final CommentRepository commentRepository;
 
     // 생성자를 통한 의존성 주입
-    public PostService(PostRepository postRepository, ApplicationEventPublisher eventPublisher) {
+    public PostService(PostRepository postRepository, ApplicationEventPublisher eventPublisher, CommentRepository commentRepository) {
         this.postRepository = postRepository;
         this.eventPublisher = eventPublisher;
+        this.commentRepository = commentRepository;
     }
 
     public List<Post> getAllPosts() {
@@ -71,6 +74,7 @@ public class PostService {
         if (!postRepository.existsById(id)) {
             throw new RuntimeException("Post not found");
         }
+        commentRepository.deleteByPostId(id);
         postRepository.deleteById(id);
     }
 
