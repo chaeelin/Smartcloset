@@ -1,13 +1,15 @@
 package com.example.smartcloset.comment.controller;
 
 import com.example.smartcloset.comment.dto.CommentRequestDto;
-import com.example.smartcloset.global.common.response.Response;
+import com.example.smartcloset.comment.dto.CommentResponseDto;
 import com.example.smartcloset.comment.service.CommentService;
+import com.example.smartcloset.global.common.response.Response;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
 import java.security.Principal;
+import java.util.List;
 
 @RestController
 @RequestMapping("/api/comments")
@@ -42,5 +44,11 @@ public class CommentController {
     public ResponseEntity<?> reportComment(@PathVariable(name = "commentId") Long commentId) {
         commentService.report(commentId);
         return Response.onSuccess();
+    }
+
+    @GetMapping("/{postId}")
+    public ResponseEntity<?> getComments(@PathVariable(name = "postId") Long postId){
+        List<CommentResponseDto> commentResponseDtos = commentService.getAll(postId);
+        return Response.onSuccess(commentResponseDtos);
     }
 }

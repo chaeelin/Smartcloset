@@ -5,6 +5,7 @@ import com.example.smartcloset.User.repository.UserRepository;
 import com.example.smartcloset.board.model.Post;
 import com.example.smartcloset.board.repository.PostRepository;
 import com.example.smartcloset.comment.dto.CommentRequestDto;
+import com.example.smartcloset.comment.dto.CommentResponseDto;
 import com.example.smartcloset.comment.entity.CommentEntity;
 import com.example.smartcloset.comment.repository.CommentRepository;
 import com.example.smartcloset.global.common.service.RedisService;
@@ -83,9 +84,14 @@ public class CommentService {
         Map<Long, Integer> commentIdAndReportCount = redisService.getReportCount(onlyKeys);
         int keySize = onlyKeys.size();
         for (int i = 0; i < keySize; ) {
-            List<CommentEntity> commentEntities = commentRepository
-                    .findAllById(onlyKeys.subList(i, i += i + 100 < keySize ? 100 : keySize % 100));
+            List<CommentEntity> commentEntities = commentRepository.findAllById(
+                    onlyKeys.subList(i, i += i + 100 < keySize ? 100 : keySize % 100));
             commentRepository.batchUpdate(commentEntities, commentIdAndReportCount);
         }
+    }
+
+    public List<CommentResponseDto> getAll(Long postId) {
+        List<CommentEntity> commentEntities = commentRepository.findAllByPostId(postId);
+        return commentEntities.stream().map(CommentEntity::toCommentResponseDto).toList();
     }
 }

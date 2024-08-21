@@ -2,6 +2,7 @@ package com.example.smartcloset.comment.entity;
 
 import com.example.smartcloset.User.entity.User;
 import com.example.smartcloset.board.model.Post;
+import com.example.smartcloset.comment.dto.CommentResponseDto;
 import jakarta.persistence.*;
 import lombok.*;
 
@@ -36,4 +37,13 @@ public class CommentEntity {
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "user_id")
     private User user;
+
+    public CommentResponseDto toCommentResponseDto(){
+        return CommentResponseDto.builder()
+                .commentId(this.id).content(this.content)
+                .reportCount(this.reportCount)
+                .parentId(this.parent.id)
+                .userName(this.user.getNickname())
+                .build();
+    }
 }
