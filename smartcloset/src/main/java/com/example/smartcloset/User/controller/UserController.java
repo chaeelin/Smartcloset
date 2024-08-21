@@ -2,23 +2,22 @@ package com.example.smartcloset.User.controller;
 
 import com.example.smartcloset.User.dto.*;
 import com.example.smartcloset.User.entity.User;
-import com.example.smartcloset.User.repository.UserRepository;
 import com.example.smartcloset.User.security.JwtUtil;
+import com.example.smartcloset.User.service.KakaoService;
 import com.example.smartcloset.User.service.UserService;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.http.HttpStatus;
-import org.springframework.http.ResponseEntity;
+import org.springframework.http.*;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.core.context.SecurityContextHolder;
-import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.security.crypto.password.PasswordEncoder;
+import org.springframework.security.oauth2.core.user.OAuth2User;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.multipart.MultipartFile;
 
 import java.io.IOException;
 import java.nio.file.Files;
+import java.nio.file.Path;
 import java.nio.file.Paths;
-import java.util.Optional;
 
 @RestController
 @RequestMapping("/api/users")
@@ -26,28 +25,26 @@ public class UserController {
 
     private final UserService userService;
     private final JwtUtil jwtUtil;
-    private final UserRepository userRepository;
     private final PasswordEncoder passwordEncoder;
+    private final KakaoService kakaoService;
 
     @Autowired
-    public UserController(UserService userService, JwtUtil jwtUtil, UserRepository userRepository, PasswordEncoder passwordEncoder) {
+    public UserController(UserService userService, JwtUtil jwtUtil, PasswordEncoder passwordEncoder, KakaoService kakaoService) {
         this.userService = userService;
         this.jwtUtil = jwtUtil;
-        this.userRepository = userRepository;
         this.passwordEncoder = passwordEncoder;
+        this.kakaoService = kakaoService;
     }
 
     // 회원가입
     @PostMapping("/register")
     public ResponseEntity<UserResponse> register(@RequestBody UserRequest request) {
         try {
-            // 비밀번호를 BCrypt로 암호화
             String encodedPassword = passwordEncoder.encode(request.getLoginPwd());
 
-            // 사용자 등록
             User user = userService.register(
                     request.getLoginId(),
-                    encodedPassword, // 암호화된 비밀번호를 사용
+                    encodedPassword,
                     request.getNickname(),
                     request.getHeight(),
                     request.getWeight(),
@@ -55,122 +52,122 @@ public class UserController {
                     request.getGender()
             );
 
-            // 등록된 사용자 정보를 UserResponse로 변환
             UserResponse userResponse = new UserResponse(
                     user.getUser_id(),
                     user.getLoginId(),
                     user.getNickname(),
                     user.getHeight(),
                     user.getWeight(),
-                    user.getGender()
+                    user.getGender(),
+                    user.getPlatform()
             );
 
             return ResponseEntity.ok(userResponse);
         } catch (Exception e) {
-            // 에러가 발생한 경우
             return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
-                    .body(null); // 에러 시 null 또는 에러 메시지 반환
+                    .body(null);
         }
     }
 
-
+    // 일반 로그인
     @PostMapping("/login")
     public LoginResponse login(@RequestBody LoginRequest request) {
         try {
-            System.out.println("Login request received for ID: " + request.getLoginId());
             User user = userService.getUserById(request.getLoginId());
-
-            if (user != null) {
-                System.out.println("Member found : " + request.getLoginId());
-
-                PasswordEncoder passwordEncoder = new BCryptPasswordEncoder();
-
-                // 입력된 비밀번호를 암호화된 비밀번호와 비교
-                if (passwordEncoder.matches(request.getLoginPwd(), user.getLoginPwd())) {
-                    String token = jwtUtil.generateToken(user.getLoginId());
-                    return new LoginResponse(token, request.getLoginId(), user.getNickname());
-                } else {
-                    System.out.println("Invalid login_pwd for ID: " + request.getLoginId());
-                    return new LoginResponse(null, request.getLoginId(), null);
-                }
+            if (user != null && passwordEncoder.matches(request.getLoginPwd(), user.getLoginPwd())) {
+                String token = jwtUtil.generateToken(user.getLoginId());
+                return new LoginResponse(token, request.getLoginId(), user.getNickname());
             } else {
-                System.out.println("Invalid login_id: " + request.getLoginId());
-                return new LoginResponse(null, null, null);
+                return new LoginResponse(null, request.getLoginId(), null);
             }
         } catch (Exception e) {
-            System.err.println("Error during login: " + e.getMessage());
             return new LoginResponse(null, null, null);
         }
     }
 
-    // 아이디 중복 확인 API
+
+    // 네이버 소셜 로그인
+    @GetMapping("/naver/login")
+    public ResponseEntity<LoginResponse> naverLogin(Authentication authentication) {
+        OAuth2User oAuth2User = (OAuth2User) authentication.getPrincipal();
+
+        User user = userService.processNaverUser(oAuth2User);
+        String token = jwtUtil.generateToken(user.getLoginId());
+
+        return ResponseEntity.ok(new LoginResponse(token, user.getLoginId(), user.getNickname()));
+    }
+
+    // 카카오 소셜 로그인
+    @PostMapping("/kakao/login")
+    public ResponseEntity<LoginResponse> kakaoLogin(@RequestBody KakaoLoginRequest request) {
+        try {
+            KakaoProfile kakaoProfile = kakaoService.getKakaoProfile(request.getAccessToken());
+            User user = kakaoService.processKakaoLogin(kakaoProfile);
+
+            if (user != null) {
+                String token = jwtUtil.generateToken(user.getLoginId());
+                LoginResponse response = new LoginResponse("Login successful", user.getNickname(), token);
+                return ResponseEntity.ok(response);
+            } else {
+                return ResponseEntity.status(401).body(new LoginResponse("Login failed for Kakao ID", null, null));
+            }
+
+        } catch (Exception e) {
+            return ResponseEntity.status(500).body(new LoginResponse("Error during Kakao login: " + e.getMessage(), null, null));
+        }
+    }
+
+    // 아이디 중복
     @GetMapping("/check/loginId")
     public CheckResponse checkLoginId(@RequestParam String loginId) {
         if (userService.checkLoginId(loginId)) {
             // loginId가 이미 존재하는 경우
-            System.out.println("Already Exists " + loginId);
             return new CheckResponse(false);
         } else {
             // loginId가 존재하지 않는 경우
-            System.out.println("loginId is available " + loginId);
             return new CheckResponse(true);
         }
     }
 
     // 닉네임 중복
     @GetMapping("/check/nickname")
-    public CheckResponse checkNickname(@RequestParam("nickname") String nickname) {
+    public CheckResponse checkNickname(@RequestParam String nickname) {
         if (nickname == null || nickname.isEmpty()) {
-            System.out.println("nickname is empty.");
             return new CheckResponse(false);
         } else {
             boolean exists = userService.checkNickname(nickname);
             if (exists) {
-                System.out.println("Already Exists " + nickname);
                 return new CheckResponse(false);
             } else {
-                System.out.println("Nickname is available " + nickname);
                 return new CheckResponse(true);
             }
         }
     }
 
-    // 키, 몸무게 수정
+    // 키와 몸무게 변경
     @PatchMapping("profile/update")
     public ResponseEntity<UpdateResponse> updateHeightAndWeight(@RequestBody UpdateRequest request) {
         try {
-            // SecurityContextHolder에서 인증된 사용자 정보 가져오기
-            Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
-            String loginId = authentication.getName();
-
+            String loginId = getAuthenticatedUserName();
             User user = userService.getUserById(loginId);
 
             if (user != null) {
                 userService.updateHeightAndWeight(user.getUser_id(), request.getHeight(), request.getWeight());
-                UpdateResponse response = new UpdateResponse(
-                        request.getHeight(),
-                        request.getWeight()
-                );
+                UpdateResponse response = new UpdateResponse(request.getHeight(), request.getWeight());
                 return ResponseEntity.ok(response);
             } else {
-                // 사용자가 존재하지 않는 경우
                 return ResponseEntity.status(HttpStatus.NOT_FOUND).body(null);
             }
         } catch (Exception e) {
-            // 예외 발생 시 내부 서버 오류로 응답
             return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(null);
         }
     }
-
 
     // 회원탈퇴
     @DeleteMapping("profile/delete")
     public String deleteUser() {
         try {
-            // SecurityContextHolder에서 인증된 사용자 정보 가져오기
-            Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
-            String loginId = authentication.getName();
-
+            String loginId = getAuthenticatedUserName();
             User user = userService.getUserById(loginId);
 
             if (user != null) {
@@ -185,81 +182,97 @@ public class UserController {
     }
 
     // 비밀번호 변경
-    @PatchMapping("/change-password")
+    @PatchMapping("/change/password")
     public ResponseEntity<String> changePassword(@RequestBody PasswordChangeRequest request) {
         try {
-            // 현재 로그인한 사용자의 ID를 SecurityContext에서 가져오기
-            Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
-            String loginId = authentication.getName();
-
-            // 사용자 조회
+            String loginId = getAuthenticatedUserName();
             User user = userService.getUserById(loginId);
 
-            // 사용자가 존재하는지 확인할 필요가 없습니다.
-            // 이미 getUserById 메서드에서 찾지 못하면 예외를 던지므로 별도 체크는 필요 없습니다.
-
-            // 현재 비밀번호 확인
             if (!passwordEncoder.matches(request.getCurrentPassword(), user.getLoginPwd())) {
                 return ResponseEntity.status(HttpStatus.BAD_REQUEST).body("Current password is incorrect.");
             }
 
-            // 비밀번호 변경
-            user.setLoginPwd(passwordEncoder.encode(request.getNewPassword()));
-
-            // 변경된 사용자 정보를 저장
-            userService.updateUser(user);
-
+            userService.changePassword(user, request.getNewPassword());
             return ResponseEntity.ok("Password changed successfully.");
-
         } catch (Exception e) {
             return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body("An error occurred while changing the password.");
         }
     }
 
-
-
-
     // 닉네임 변경
-    @PatchMapping("/change-nickname")
-    public ResponseEntity<CheckResponse> changeNickname(@RequestBody NicknameChangeRequest request) {
+    @PatchMapping("/change/nickname")
+    public ResponseEntity<String> changeNickname(@RequestBody NicknameChangeRequest request) {
         try {
-            // SecurityContextHolder에서 인증된 사용자 정보 가져오기
-            Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
-            String loginId = authentication.getName();
-
-            // 사용자 조회
+            String loginId = getAuthenticatedUserName();
             User user = userService.getUserById(loginId);
 
             if (user == null) {
-                return ResponseEntity.status(HttpStatus.NOT_FOUND).body(new CheckResponse(false));
+                return ResponseEntity.status(HttpStatus.BAD_REQUEST).body("User not found or invalid.");
             }
 
-            // 닉네임 변경
-            userService.changeNickname(user.getLoginId(), request.getNewNickname());
-            return ResponseEntity.ok(new CheckResponse(true));
-
+            userService.changeNickname(user, request.getNewNickname());
+            return ResponseEntity.ok("Nickname changed successfully.");
         } catch (Exception e) {
-            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(new CheckResponse(false));
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body("An error occurred while changing the password.");
         }
     }
 
+    // 프로필 변경
+    @PutMapping(value = "/profile-picture", consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
+    public ResponseEntity<?> uploadProfilePicture(@RequestParam("file") MultipartFile file) {
+        try {
+            String loginId = getAuthenticatedUserName();
+            User user = userService.getUserById(loginId);
 
-    // 프로필 사진 업데이트 API
-    @PutMapping("/profile-picture")
-    public String updateProfilePicture(@RequestParam("file") MultipartFile file) throws IOException {
-        userService.updateProfilePicture(file);
-        return "Profile picture updated successfully";
+            if (user == null) {
+                return ResponseEntity.status(HttpStatus.NOT_FOUND).body("User not found");
+            }
+
+            // 파일 저장 경로 설정
+            String filename = file.getOriginalFilename();
+            Path path = Paths.get("uploads/profile-pictures/" + filename);
+            Files.createDirectories(path.getParent());
+            Files.write(path, file.getBytes());
+
+            // 사용자 엔티티에 프로필 사진 경로 저장
+            user.setProfilePicture(path.toString()); // 전체 파일 경로 저장
+            userService.updateUser(user);
+
+            return ResponseEntity.ok("File uploaded successfully and profile picture updated");
+        } catch (IOException e) {
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
+                    .body("File upload failed: " + e.getMessage());
+        }
     }
 
-    // 프로필 사진 가져오기 API
+    // 키, 몸무게 변경
     @GetMapping("/profile-picture")
-    public byte[] getProfilePicture() throws IOException {
-        String picturePath = userService.getProfilePicturePath();
-        if (picturePath != null) {
-            return Files.readAllBytes(Paths.get(picturePath));
-        } else {
-            return null; // 프론트엔드에서 기본 이미지를 처리하도록 null 반환
+    public ResponseEntity<byte[]> getProfilePicture() {
+
+        String loginId = getAuthenticatedUserName();
+        User user = userService.getUserById(loginId);
+
+        if (user == null || user.getProfilePicture() == null) {
+            return new ResponseEntity<>(HttpStatus.NOT_FOUND);
         }
+
+        try {
+            Path path = Paths.get(user.getProfilePicture());
+            byte[] data = Files.readAllBytes(path);
+
+            HttpHeaders headers = new HttpHeaders();
+            headers.setContentType(MediaType.IMAGE_JPEG);
+            headers.setContentLength(data.length);
+
+            return new ResponseEntity<>(data, headers, HttpStatus.OK);
+        } catch (IOException e) {
+            return new ResponseEntity<>(HttpStatus.NOT_FOUND);
+        }
+    }
+
+    private String getAuthenticatedUserName() {
+        Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
+        return authentication.getName();
     }
 }
 

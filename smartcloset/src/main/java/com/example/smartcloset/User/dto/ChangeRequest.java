@@ -10,10 +10,6 @@ public class ChangeRequest {
     private String currentPassword;
     private String newPassword;
 
-    public ChangeRequest (String newNickname) {
-        this.newNickname = newNickname;
-    }
-
     public ChangeRequest(String currentPassword, String newPassword) {
         this.currentPassword = currentPassword;
         this.newPassword = newPassword;

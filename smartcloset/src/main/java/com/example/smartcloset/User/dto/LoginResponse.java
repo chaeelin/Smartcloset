@@ -10,9 +10,6 @@ public class LoginResponse {
     private String loginId;
     private String nickname;
 
-    public LoginResponse() {
-    }
-
     public LoginResponse(String token, String loginId, String nickname) {
         this.token = token;
         this.loginId = loginId;
