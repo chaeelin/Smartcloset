@@ -26,6 +26,7 @@ public class CommentEntity {
     @Setter
     private int reportCount;
 
+    // 대댓글 설정
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "parent_id")
     private CommentEntity parent;

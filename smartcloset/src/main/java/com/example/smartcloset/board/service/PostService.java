@@ -74,6 +74,7 @@ public class PostService {
         if (!postRepository.existsById(id)) {
             throw new RuntimeException("Post not found");
         }
+        //외래키 먼저 삭제 후 게시글 삭제 진행
         commentRepository.deleteByPostId(id);
         postRepository.deleteById(id);
     }

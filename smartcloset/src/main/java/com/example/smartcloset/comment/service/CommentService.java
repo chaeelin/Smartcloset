@@ -27,13 +27,13 @@ public class CommentService {
     private final RedisService redisService;
 
     @Transactional
-    public Long save(Long feedId, CommentRequestDto commentRequestDto, String userName) {
+    public Long save(Long postId, CommentRequestDto commentRequestDto, String userName) {
         CommentEntity parent = null;
         Long parentId = commentRequestDto.getParentId();
         if (parentId != null) {
             parent = commentRepository.findById(parentId).orElseThrow(/*예외 발생*/);
         }
-        Post post = postRepository.findById(feedId).orElseThrow(/*예외 발생*/);
+        Post post = postRepository.findById(postId).orElseThrow(/*예외 발생*/);
         User user = userRepository.findByLoginId(userName).orElseThrow(/*예외 발생*/);
         CommentEntity comment = CommentEntity.builder()
                 .parent(parent).user(user).post(post)
@@ -43,6 +43,10 @@ public class CommentService {
         return comment.getId();
     }
 
+    /**
+     * 삭제시 대댓글이 존재하면 삭제된 댓글로 변경
+     * 대댓글이 없으면 아예 삭제
+     */
     @Transactional
     public void delete(Long commentId, String userName) {
         CommentEntity comment = commentRepository.findByIdWithUser(commentId)
@@ -71,11 +75,18 @@ public class CommentService {
         }
     }
 
+    /**
+     * 댓글의 신고 수를 redis에 우선 저장
+     */
     @Transactional
     public void report(Long commentId) {
         redisService.addReportCount(commentId);
     }
 
+    /**
+     * fixedDelay에 설정된 시간마다 redis에 저장된
+     * 댓글의 신고 수를 업데이트
+     */
     @Scheduled(fixedDelay = 3000000)
     public void reportCountToDB() {
         Set<String> allKeys = redisService.getAllKeys();
