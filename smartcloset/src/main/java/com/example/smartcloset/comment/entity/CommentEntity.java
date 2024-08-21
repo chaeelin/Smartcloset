@@ -1,7 +1,7 @@
 package com.example.smartcloset.comment.entity;
 
 import com.example.smartcloset.User.entity.User;
-import com.example.smartcloset.model.Post;
+import com.example.smartcloset.board.model.Post;
 import jakarta.persistence.*;
 import lombok.*;
 
