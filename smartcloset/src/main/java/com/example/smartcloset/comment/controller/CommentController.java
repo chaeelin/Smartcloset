@@ -52,7 +52,7 @@ public class CommentController {
     /**
      * 특정 댓글 신고
      */
-    @PatchMapping("/{commentId}")
+    @PatchMapping("/{commentId}/report")
     public ResponseEntity<?> reportComment(@PathVariable(name = "commentId") Long commentId) {
         commentService.report(commentId);
         return Response.onSuccess();
@@ -62,7 +62,7 @@ public class CommentController {
      * 특정 게시물의 전체 댓글 조회 -> 성능상 문제가 있을 시 페이지네이션 추가
      */
     @GetMapping("/{postId}")
-    public ResponseEntity<?> getComments(@PathVariable(name = "postId") Long postId){
+    public ResponseEntity<?> getComments(@PathVariable(name = "postId") Long postId) {
         List<CommentResponseDto> commentResponseDtos = commentService.getAll(postId);
         return Response.onSuccess(commentResponseDtos);
     }

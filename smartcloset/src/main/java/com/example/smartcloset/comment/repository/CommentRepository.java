@@ -11,7 +11,7 @@ public interface CommentRepository extends JpaRepository<CommentEntity, Long>, C
     @Query("select c from CommentEntity c join fetch c.user where c.id=?1")
     Optional<CommentEntity> findByIdWithUser(Long commentId);
 
-    @Query("select c.id from CommentEntity c where c.parent_id=?1 limit 1")
+    @Query("SELECT COUNT(c) > 0 FROM CommentEntity c WHERE c.parent.id = ?1")
     boolean existsByParentId(Long commentId);
 
     @Query("delete from CommentEntity c where c.post.id=?1")
