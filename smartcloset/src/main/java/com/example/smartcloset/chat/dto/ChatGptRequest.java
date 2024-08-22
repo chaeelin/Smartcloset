@@ -1,4 +1,4 @@
-package com.example.smartcloset.dto;
+package com.example.smartcloset.chat.dto;
 
 import lombok.Data;
 
