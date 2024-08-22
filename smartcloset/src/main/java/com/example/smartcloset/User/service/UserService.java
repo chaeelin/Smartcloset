@@ -4,23 +4,17 @@ import com.example.smartcloset.User.entity.Platform;
 import com.example.smartcloset.User.entity.User;
 import com.example.smartcloset.User.entity.Gender;
 import com.example.smartcloset.User.repository.UserRepository;
-import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.beans.factory.annotation.Value;
+import lombok.RequiredArgsConstructor;
 import org.springframework.security.oauth2.core.user.OAuth2User;
 import org.springframework.stereotype.Service;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import java.sql.Timestamp;
 
 @Service
+@RequiredArgsConstructor
 public class UserService {
     private final UserRepository userRepository;
     private final PasswordEncoder passwordEncoder;
-
-    @Autowired
-    public UserService(UserRepository userRepository, PasswordEncoder passwordEncoder) {
-        this.userRepository = userRepository;
-        this.passwordEncoder = passwordEncoder;
-    }
 
     // 로그인 ID를 통해 사용자를 조회
     public User getUserById(String loginId) {

@@ -2,6 +2,7 @@ package com.example.smartcloset.User.service;
 
 import com.example.smartcloset.User.entity.User;  // 엔티티 클래스 임포트
 import com.example.smartcloset.User.repository.UserRepository;
+import lombok.RequiredArgsConstructor;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.security.core.GrantedAuthority;
 import org.springframework.security.core.userdetails.UserDetails;
@@ -13,9 +14,8 @@ import java.util.ArrayList;
 import java.util.List;
 
 @Service
+@RequiredArgsConstructor
 public class CustomUserDetailsService implements UserDetailsService {
-
-    @Autowired
     private UserRepository userRepository;
 
     @Override

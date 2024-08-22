@@ -7,7 +7,6 @@ import org.springframework.stereotype.Repository;
 
 import java.util.List;
 
-@Repository
 public interface PostRepository extends JpaRepository<Post, Long> {
     // 제목에 특정 문자열이 포함된 게시물을 대소문자 구분 없이 검색
     List<Post> findByTitleContainingIgnoreCase(String title);
