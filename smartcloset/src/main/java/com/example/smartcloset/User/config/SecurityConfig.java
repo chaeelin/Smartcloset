@@ -1,6 +1,7 @@
 package com.example.smartcloset.User.config;
 
 import com.example.smartcloset.User.security.JwtRequestFilter;
+import com.example.smartcloset.User.service.CustomOAuth2UserService;
 import jakarta.servlet.http.HttpServletResponse;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
@@ -23,47 +24,46 @@ public class SecurityConfig {
 
     public SecurityConfig(JwtRequestFilter jwtRequestFilter) {
         this.jwtRequestFilter = jwtRequestFilter;
-        System.out.println("JwtRequestFilter instance injected: " + jwtRequestFilter);
     }
 
     @Bean
     public SecurityFilterChain securityFilterChain(HttpSecurity http) throws Exception {
-        System.out.println("Configuring SecurityFilterChain...");
         http
-                .csrf(csrf -> csrf.disable()) // CSRF 보호 비활성화
-                .cors(withDefaults()) // 추가된 CORS 설정
+                .csrf(csrf -> csrf.disable())
+                .cors(withDefaults())
                 .authorizeHttpRequests(authorizeRequests -> authorizeRequests
                                 .requestMatchers("/v3/api-docs/**").permitAll()
                                 .requestMatchers("/swagger-ui/**").permitAll()
                                 .requestMatchers("/swagger-ui.html").permitAll()
                                 .requestMatchers("/api/users/login").permitAll()
+                                .requestMatchers("/api/users/naver/login").permitAll()
+                                .requestMatchers("/api/users/kakao/login").permitAll()
                                 .requestMatchers("/api/users/register").permitAll()
                                 .requestMatchers("/api/users/check/nickname").permitAll()
                                 .requestMatchers("/api/users/check/loginId").permitAll()
-                        .requestMatchers("/api/users/change-password").authenticated()  // 인증된 사용자만 접근 가능
                                 .anyRequest().authenticated()
                 )
                 .exceptionHandling(exceptionHandling -> exceptionHandling
                         .authenticationEntryPoint(new Http403ForbiddenEntryPoint())
                         .accessDeniedHandler(accessDeniedHandler())
                 )
-
-                // 서버 세션 유지
                 .sessionManagement(sessionManagement -> sessionManagement
-                        .sessionCreationPolicy(SessionCreationPolicy.IF_REQUIRED));
+                        .sessionCreationPolicy(SessionCreationPolicy.IF_REQUIRED))
 
+                // 네이버 로그인
+                .oauth2Login(oauth2 -> oauth2
+                        .loginPage("/api/users/naver/login")
+                        .userInfoEndpoint(userInfo -> userInfo
+                                .userService(customOAuth2UserService())
+                        )
+                );
 
-        // JwtRequestFilter를 UsernamePasswordAuthenticationFilter 전에 추가합니다.
         http.addFilterBefore(jwtRequestFilter, UsernamePasswordAuthenticationFilter.class);
-
-
-        System.out.println("SecurityFilterChain configured.");
         return http.build();
     }
 
     @Bean
     public PasswordEncoder passwordEncoder() {
-        System.out.println("Configuring PasswordEncoder...");
         return new BCryptPasswordEncoder();
     }
 
@@ -79,5 +79,10 @@ public class SecurityConfig {
     @Bean
     public Http403ForbiddenEntryPoint authenticationEntryPoint() {
         return new Http403ForbiddenEntryPoint();
+    }
+
+    @Bean
+    public CustomOAuth2UserService customOAuth2UserService() {
+        return new CustomOAuth2UserService();
     }
 }

@@ -1,5 +1,6 @@
 package com.example.smartcloset.User.dto;
 
+import com.example.smartcloset.User.entity.Platform;
 import com.fasterxml.jackson.annotation.JsonInclude;
 import lombok.Getter;
 import lombok.Setter;
@@ -16,28 +17,16 @@ public class UserResponse {
     private Integer weight;
     private Gender gender;
     private String token;
+    private Platform platform;
 
-    public UserResponse() {}
-
-    public UserResponse(Long userId, String loginId, String nickname, Integer height, Integer weight, Gender gender) {
+    public UserResponse(Long userId, String loginId, String nickname, Integer height, Integer weight, Gender gender, Platform platform) {
         this.userId = userId;
         this.loginId = loginId;
         this.nickname = nickname;
         this.height = height;
         this.weight = weight;
         this.gender = gender;
+        this.platform = platform;
     }
 
-    // 키와 몸무게 수정
-    public UserResponse(Integer height, Integer weight) {
-        this.height = height;
-        this.weight = weight;
-    }
-
-    // 로그인
-    public UserResponse(String token, String loginId, String nickname) {
-        this.token = token;
-        this.loginId = loginId;
-        this.nickname = nickname;
-    }
 }

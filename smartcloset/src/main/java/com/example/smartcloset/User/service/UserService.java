@@ -6,25 +6,14 @@ import com.example.smartcloset.User.entity.Gender;
 import com.example.smartcloset.User.repository.UserRepository;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
-import org.springframework.security.core.Authentication;
-import org.springframework.security.core.context.SecurityContextHolder;
+import org.springframework.security.oauth2.core.user.OAuth2User;
 import org.springframework.stereotype.Service;
-import org.springframework.web.multipart.MultipartFile;
 import org.springframework.security.crypto.password.PasswordEncoder;
-import org.springframework.beans.factory.annotation.Autowired;
-
-import java.io.IOException;
-import java.nio.file.Path;
-import java.nio.file.Paths;
 import java.sql.Timestamp;
-import java.util.Optional;
 
 @Service
 public class UserService {
-
-    @Value("${profile.pictures.dir}")
-    private String profilePicturesDir;
-    private UserRepository userRepository;
+    private final UserRepository userRepository;
     private final PasswordEncoder passwordEncoder;
 
     @Autowired
@@ -51,6 +40,11 @@ public class UserService {
 
     // 회원가입
     public User register(String loginId, String loginPwd, String nickname, int height, int weight, Platform platform, Gender gender) {
+        // Platform이 null일 경우 기본값으로 APP 설정
+        if (platform == null) {
+            platform = Platform.APP;
+        }
+
         User user = User.builder()
                 .loginId(loginId)
                 .loginPwd(loginPwd)
@@ -61,9 +55,41 @@ public class UserService {
                 .date(new Timestamp(System.currentTimeMillis()))
                 .gender(gender)
                 .build();
-        userRepository.save(user);
-        return user; // 여기서 User 객체를 반환해야 합니다.
+        return saveUser(user);
     }
+
+    // 네이버
+    public User processNaverUser(OAuth2User oAuth2User) {
+        String loginId = (String) oAuth2User.getAttributes().get("id"); // 유니크한 네이버 ID 사용
+        String nickname = (String) oAuth2User.getAttributes().get("nickname");
+        String profileImage = (String) oAuth2User.getAttributes().get("profile_image");
+        String gender = (String) oAuth2User.getAttributes().get("gender");
+
+        // 사용자가 이미 존재하는지 확인
+        User user = userRepository.findByLoginId(loginId)
+                .orElseGet(() -> {
+                    // 존재하지 않으면 새로운 사용자 등록
+                    User newUser = User.builder()
+                            .loginId(loginId)
+                            .loginPwd(null)
+                            .nickname(nickname)
+                            .height(0)
+                            .weight(0)
+                            .platform(Platform.NAVER)
+                            .date(new Timestamp(System.currentTimeMillis()))
+                            .gender(Gender.valueOf(gender.toUpperCase()))
+                            .profilePicture(profileImage)
+                            .build();
+                    return userRepository.save(newUser);
+                });
+
+        user.setNickname(nickname);
+        user.setProfilePicture(profileImage);
+        userRepository.save(user);
+
+        return user;
+    }
+
 
     // 키, 몸무게 수정
     public void updateHeightAndWeight(Long userId, Integer height, Integer weight) {
@@ -76,79 +102,35 @@ public class UserService {
         if (weight != null) {
             user.setWeight(weight);
         }
-        userRepository.save(user);
+        saveUser(user);
     }
 
 
     // 회원 탈퇴
     public void deleteUser(Long userId) {
-
         userRepository.deleteById(userId);
     }
 
-    // 로그인 ID로 사용자 조회
-    public Optional<User> getUserByLoginId(String loginId) {
-        return userRepository.findByLoginId(loginId);
-    }
-
-    // 사용자 업데이트 메소드 추가
-    public void updateUser(User user) {
-        userRepository.save(user); // save 메소드는 존재하는 사용자를 업데이트
-    }
-
     // 비번 변경
-    public void changePassword(String loginId, String newPassword) {
-        User user = userRepository.findByLoginId(loginId)
-                .orElseThrow(() -> new IllegalArgumentException("User not found with loginId: " + loginId));
-
-        // 비밀번호 암호화
+    public void changePassword(User user, String newPassword) { // 수정됨: loginId 대신 User 객체를 직접 사용
         String encryptedPassword = passwordEncoder.encode(newPassword);
-
         user.setLoginPwd(encryptedPassword);
-        userRepository.save(user);
+        saveUser(user);
     }
 
 
     // 닉네임 변경
-    public void changeNickname(String loginId, String newNickname) {
-        User user = userRepository.findByLoginId(loginId)
-                .orElseThrow(() -> new IllegalArgumentException("User not found with loginId: " + loginId));
-
+    public void changeNickname(User user, String newNickname) { // 수정됨: loginId 대신 User 객체를 직접 사용
         user.setNickname(newNickname);
-        userRepository.save(user);
+        saveUser(user);
     }
 
-    // 프로필 사진 경로 가져오기
-    public String getProfilePicturePath() {
-        User user = getAuthenticatedUser(); // 현재 인증된 사용자를 가져옵니다.
-        if (user.getProfilePicture() == null) {
-            return null;
-        } else {
-            return Paths.get(profilePicturesDir, user.getProfilePicture()).toString();
-        }
+    private User saveUser(User user) {
+        return userRepository.save(user);
     }
 
-    // 프로필 사진 업데이트
-    public void updateProfilePicture(MultipartFile file) throws IOException {
-        User user = getAuthenticatedUser(); // 현재 인증된 사용자를 가져옵니다.
-        if (!file.isEmpty()) {
-            String filename = user.getUser_id() + "_" + file.getOriginalFilename();
-            Path destinationPath = Paths.get(profilePicturesDir, filename);
-            file.transferTo(destinationPath.toFile());
-
-            user.setProfilePicture(filename);
-            saveUser(user);
-        }
-    }
-
-    private void saveUser(User user) {
-        userRepository.save(user);
-    }
-
-    private User getAuthenticatedUser() {
-        Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
-        String loginId = authentication.getName();
-        return userRepository.findByLoginId(loginId)
-                .orElseThrow(() -> new RuntimeException("User not found"));
+    // 사용자 업데이트 메서드
+    public User updateUser(User user) {
+        return userRepository.save(user); // JPA의 save 메서드를 사용하여 사용자를 업데이트
     }
 }

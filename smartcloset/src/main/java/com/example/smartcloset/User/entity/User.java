@@ -19,10 +19,10 @@ public class User {
     @Column(name = "user_id")
     private Long user_id;
 
-    @Column(name = "loginId", length = 20, nullable = false, unique = true)
+    @Column(name = "loginId", length = 20, nullable = true, unique = true)
     private String loginId;
 
-    @Column(name = "loginPwd", length = 255, nullable = false)
+    @Column(name = "loginPwd", length = 255, nullable = true)
     private String loginPwd;
 
     @Column(name = "nickname", length = 20, nullable = false, unique = true)
@@ -49,6 +49,7 @@ public class User {
     @Column(name = "profilePicture")
     private String profilePicture;
 
-
+    @Column(name = "kakaoId")
+    private String kakaoId;
 }
 
