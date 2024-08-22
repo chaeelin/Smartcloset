@@ -52,7 +52,7 @@ public class CommentController {
     /**
      * 특정 댓글 신고
      */
-    @PatchMapping("/{commentId}/report")
+    @PostMapping("/report/{commentId}")
     public ResponseEntity<?> reportComment(@PathVariable(name = "commentId") Long commentId) {
         commentService.report(commentId);
         return Response.onSuccess();

@@ -2,6 +2,7 @@ package com.example.smartcloset.comment.repository;
 
 import com.example.smartcloset.comment.entity.CommentEntity;
 import org.springframework.data.jpa.repository.JpaRepository;
+import org.springframework.data.jpa.repository.Modifying;
 import org.springframework.data.jpa.repository.Query;
 
 import java.util.List;
@@ -11,7 +12,6 @@ public interface CommentRepository extends JpaRepository<CommentEntity, Long>, C
     @Query("select c from CommentEntity c join fetch c.user where c.id=?1")
     Optional<CommentEntity> findByIdWithUser(Long commentId);
 
-    @Query("SELECT COUNT(c) > 0 FROM CommentEntity c WHERE c.parent.id = ?1")
     boolean existsByParentId(Long commentId);
 
     @Query("delete from CommentEntity c where c.post.id=?1")

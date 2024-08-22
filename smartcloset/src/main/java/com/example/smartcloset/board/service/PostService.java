@@ -8,6 +8,7 @@ import com.example.smartcloset.comment.repository.CommentRepository;
 import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 
 import java.util.List;
 
@@ -70,6 +71,7 @@ public class PostService {
         }
     }
 
+    @Transactional
     public void deletePost(Long id) {
         if (!postRepository.existsById(id)) {
             throw new RuntimeException("Post not found");
