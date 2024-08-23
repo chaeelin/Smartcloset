@@ -6,6 +6,8 @@ import com.example.smartcloset.comment.dto.CommentResponseDto;
 import jakarta.persistence.*;
 import lombok.*;
 
+import java.util.Optional;
+
 @Entity
 @Table(name = "comment")
 @Builder
@@ -43,7 +45,7 @@ public class CommentEntity {
         return CommentResponseDto.builder()
                 .commentId(this.id).content(this.content)
                 .reportCount(this.reportCount)
-                .parentId(this.parent.id)
+                .parentId(this.parent!=null? parent.id : null)
                 .userName(this.user.getNickname())
                 .build();
     }

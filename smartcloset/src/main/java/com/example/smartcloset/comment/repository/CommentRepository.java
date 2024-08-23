@@ -18,6 +18,6 @@ public interface CommentRepository extends JpaRepository<CommentEntity, Long>, C
     void deleteByPostId(Long postId);
 
     @Query("select c from CommentEntity c join fetch c.user " +
-            "join fetch c.parent where c.post.id=?1 order by c.id")
+            "left join fetch c.parent where c.post.id=?1 order by c.id")
     List<CommentEntity> findAllByPostId(Long postId);
 }
