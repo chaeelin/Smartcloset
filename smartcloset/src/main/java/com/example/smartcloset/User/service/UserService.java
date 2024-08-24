@@ -8,6 +8,7 @@ import lombok.RequiredArgsConstructor;
 import org.springframework.security.oauth2.core.user.OAuth2User;
 import org.springframework.stereotype.Service;
 import org.springframework.security.crypto.password.PasswordEncoder;
+import java.security.Principal;
 import java.sql.Timestamp;
 
 @Service
@@ -23,12 +24,18 @@ public class UserService {
                 .orElseThrow(() -> new IllegalArgumentException("Invalid login_id: " + loginId));
     }
 
+    // Principal 객체를 사용하여 현재 로그인된 사용자 정보를 가져오는 메서드 추가
+    public User getUserByPrincipal(Principal principal) {
+        String loginId = principal.getName(); // Principal에서 사용자 이름(로그인 ID)을 가져옴
+        return userRepository.findByLoginId(loginId)
+                .orElseThrow(() -> new IllegalArgumentException("User not found with loginId: " + loginId));
+    }
+
     public boolean checkLoginId(String loginId) {
         return userRepository.existsByLoginId(loginId);
     }
 
     public boolean checkNickname(String nickname) {
-
         return userRepository.existsByNickname(nickname);
     }
 
@@ -84,7 +91,6 @@ public class UserService {
         return user;
     }
 
-
     // 키, 몸무게 수정
     public void updateHeightAndWeight(Long userId, Integer height, Integer weight) {
         User user = userRepository.findById(userId)
@@ -99,22 +105,20 @@ public class UserService {
         saveUser(user);
     }
 
-
     // 회원 탈퇴
     public void deleteUser(Long userId) {
         userRepository.deleteById(userId);
     }
 
-    // 비번 변경
-    public void changePassword(User user, String newPassword) { // 수정됨: loginId 대신 User 객체를 직접 사용
+    // 비밀번호 변경
+    public void changePassword(User user, String newPassword) {
         String encryptedPassword = passwordEncoder.encode(newPassword);
         user.setLoginPwd(encryptedPassword);
         saveUser(user);
     }
 
-
     // 닉네임 변경
-    public void changeNickname(User user, String newNickname) { // 수정됨: loginId 대신 User 객체를 직접 사용
+    public void changeNickname(User user, String newNickname) {
         user.setNickname(newNickname);
         saveUser(user);
     }
@@ -125,6 +129,6 @@ public class UserService {
 
     // 사용자 업데이트 메서드
     public User updateUser(User user) {
-        return userRepository.save(user); // JPA의 save 메서드를 사용하여 사용자를 업데이트
+        return userRepository.save(user);
     }
 }
