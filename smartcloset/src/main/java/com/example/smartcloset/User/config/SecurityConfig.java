@@ -50,6 +50,8 @@ public class SecurityConfig {
                     }
                 }))
                 .csrf(csrf -> csrf.disable())
+                // CORS 설정 기본값 사용
+                .cors(withDefaults())
                 .authorizeHttpRequests(authorizeRequests -> authorizeRequests
                         .requestMatchers("/v3/api-docs/**").permitAll()
                         .requestMatchers("/swagger-ui/**").permitAll()
@@ -61,6 +63,7 @@ public class SecurityConfig {
                         .requestMatchers("/api/users/check/nickname").permitAll()
                         .requestMatchers("/api/users/check/loginId").permitAll()
                         .requestMatchers("/error").permitAll()
+                        .requestMatchers("/bot/chat").permitAll()
                         .anyRequest().authenticated()
                 )
                 .exceptionHandling(exceptionHandling -> exceptionHandling
@@ -68,7 +71,7 @@ public class SecurityConfig {
                         .accessDeniedHandler(accessDeniedHandler())
                 )
                 .sessionManagement(sessionManagement -> sessionManagement
-                        .sessionCreationPolicy(SessionCreationPolicy.IF_REQUIRED))
+                        .sessionCreationPolicy(SessionCreationPolicy.STATELESS)) // 세션 상태 유지 안 함
 
                 // 네이버 로그인
                 .oauth2Login(oauth2 -> oauth2
