@@ -2,7 +2,10 @@ package com.example.smartcloset.board.controller;
 
 import com.example.smartcloset.board.model.Post;
 import com.example.smartcloset.board.service.PostService;
+import com.example.smartcloset.comment.entity.CommentEntity;
+import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
+import org.springframework.web.multipart.MultipartFile;
 
 import java.util.List;
 
@@ -32,11 +35,24 @@ public class PostController {
         return postService.searchPostsByTitle(title);
     }
 
-    // 페이징 메서드 제거
-
+    // 기존 게시물 생성 메서드
     @PostMapping
     public Post createPost(@RequestBody Post post) {
         return postService.savePost(post);
+    }
+
+    // 게시물과 함께 이미지를 업로드하는 새로운 메서드 추가
+    @PostMapping("/withImage")
+    public ResponseEntity<Post> createPostWithImage(
+            @RequestParam("title") String title,
+            @RequestParam("content") String content,
+            @RequestPart("imageFile") MultipartFile imageFile) {
+        try {
+            Post post = postService.savePostWithImage(title, content, imageFile);
+            return ResponseEntity.ok(post);
+        } catch (Exception e) {
+            return ResponseEntity.status(500).build();
+        }
     }
 
     @PutMapping("/{id}")
@@ -58,5 +74,12 @@ public class PostController {
     @GetMapping("/loadMore")
     public List<Post> loadMorePosts(@RequestParam Long lastPostId, @RequestParam int limit) {
         return postService.getPostsAfterId(lastPostId, limit);
+    }
+
+    // 특정 게시물의 모든 댓글 조회
+    @GetMapping("/{postId}/comments")
+    public ResponseEntity<List<CommentEntity>> getCommentsByPostId(@PathVariable Long postId) {
+        List<CommentEntity> comments = postService.getCommentsByPostId(postId);
+        return ResponseEntity.ok(comments);
     }
 }

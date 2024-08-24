@@ -4,11 +4,19 @@ import com.example.smartcloset.board.event.LikeEvent;
 import com.example.smartcloset.board.event.TopPostEvent;
 import com.example.smartcloset.board.model.Post;
 import com.example.smartcloset.board.repository.PostRepository;
+import com.example.smartcloset.comment.entity.CommentEntity;
 import com.example.smartcloset.comment.repository.CommentRepository;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.stereotype.Service;
+import org.springframework.web.multipart.MultipartFile;
 
+import java.io.IOException;
+import java.nio.file.Files;
+import java.nio.file.Path;
+import java.nio.file.Paths;
+import java.time.LocalDateTime;
 import java.util.List;
 
 @Service
@@ -17,6 +25,10 @@ public class PostService {
     private final PostRepository postRepository;
     private final ApplicationEventPublisher eventPublisher;
     private final CommentRepository commentRepository;
+
+    // application.properties에서 정의한 file.upload-dir 값을 주입받습니다.
+    @Value("${file.upload-dir}")
+    private String uploadDir;
 
     // 생성자를 통한 의존성 주입
     public PostService(PostRepository postRepository, ApplicationEventPublisher eventPublisher, CommentRepository commentRepository) {
@@ -54,6 +66,25 @@ public class PostService {
         return postRepository.save(existingPost);
     }
 
+    // 게시물의 모든 댓글 조회
+    public List<CommentEntity> getCommentsByPostId(Long postId) {
+        return commentRepository.findAllByPostId(postId);
+    }
+
+    // 댓글 추가 시 댓글 수 증가
+    public void incrementCommentCount(Long postId) {
+        Post post = postRepository.findById(postId).orElseThrow(() -> new IllegalArgumentException("Invalid post ID"));
+        post.setCommentsCount(post.getCommentsCount() + 1);
+        postRepository.save(post);
+    }
+
+    // 댓글 삭제 시 댓글 수 감소
+    public void decrementCommentCount(Long postId) {
+        Post post = postRepository.findById(postId).orElseThrow(() -> new IllegalArgumentException("Invalid post ID"));
+        post.setCommentsCount(post.getCommentsCount() - 1);
+        postRepository.save(post);
+    }
+
     // 좋아요 수 증가 및 이벤트 발생
     public void increasePostLikes(Long id) {
         Post post = postRepository.findById(id)
@@ -82,6 +113,22 @@ public class PostService {
     // 무한 스크롤을 위한 메서드 추가
     public List<Post> getPostsAfterId(Long lastPostId, int limit) {
         return postRepository.findByIdGreaterThanOrderByIdAsc(lastPostId, PageRequest.of(0, limit));
+    }
+
+    public Post savePostWithImage(String title, String content, MultipartFile imageFile) throws IOException {
+        // 파일을 저장할 디렉토리를 생성
+        String fileName = System.currentTimeMillis() + "_" + imageFile.getOriginalFilename();
+        Path path = Paths.get(uploadDir + fileName);
+        Files.createDirectories(path.getParent());
+        Files.write(path, imageFile.getBytes());
+
+        // Post 객체를 생성하고 데이터베이스에 저장
+        Post post = new Post();
+        post.setTitle(title);
+        post.setContent(content);
+        post.setImageUrl(path.toString());
+        post.setDate(LocalDateTime.now());
+        return postRepository.save(post);
     }
 
     // 추가적인 비즈니스 로직 (예: 업데이트, 삭제 등)
