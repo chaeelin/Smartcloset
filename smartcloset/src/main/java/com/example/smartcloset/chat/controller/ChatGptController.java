@@ -32,13 +32,12 @@ public class ChatGptController {
     @Autowired
     private WeatherService weatherService;
 
-    @GetMapping ("/chat")
-    public @ResponseBody Response handleChat(@RequestBody ChatRequest chatRequest) {
+    @GetMapping("/chat")
+    public @ResponseBody Response handleChat(
+            @RequestParam(name = "latitude", required = false, defaultValue = "0.0") double latitude,
+            @RequestParam(name = "longitude", required = false, defaultValue = "0.0") double longitude,
+            @RequestParam(name = "prompt", defaultValue = "오늘 뭐 입을까?") String prompt) {
         try {
-            double latitude = chatRequest.getLatitude();
-            double longitude = chatRequest.getLongitude();
-            String prompt = chatRequest.getPrompt();
-
             // 날씨 정보 가져오기
             String weatherInfo = weatherService.getWeatherByCoordinates(latitude, longitude);
 
@@ -66,37 +65,6 @@ public class ChatGptController {
             return new Response(resultWithHashtags);
         } catch (Exception e) {
             return new Response("에러가 발생했습니다. " + e.getMessage());
-        }
-    }
-
-    static class ChatRequest {
-        private double latitude;
-        private double longitude;
-        private String prompt;
-
-        // Getters and Setters
-        public double getLatitude() {
-            return latitude;
-        }
-
-        public void setLatitude(double latitude) {
-            this.latitude = latitude;
-        }
-
-        public double getLongitude() {
-            return longitude;
-        }
-
-        public void setLongitude(double longitude) {
-            this.longitude = longitude;
-        }
-
-        public String getPrompt() {
-            return prompt;
-        }
-
-        public void setPrompt(String prompt) {
-            this.prompt = prompt;
         }
     }
 
