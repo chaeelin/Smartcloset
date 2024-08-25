@@ -5,7 +5,10 @@ import com.example.smartcloset.User.entity.User;
 import com.example.smartcloset.User.security.JwtUtil;
 import com.example.smartcloset.User.service.KakaoService;
 import com.example.smartcloset.User.service.UserService;
+import jakarta.servlet.http.HttpServletRequest;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.core.io.Resource;
+import org.springframework.core.io.UrlResource;
 import org.springframework.http.*;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.core.context.SecurityContextHolder;
@@ -18,6 +21,7 @@ import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
+import java.util.UUID;
 
 @RestController
 @RequestMapping("/api/users")
@@ -217,10 +221,12 @@ public class UserController {
         }
     }
 
-    // 프로필 변경
+
+    // 프로필 사진 설정
     @PutMapping(value = "/profile-picture", consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
-    public ResponseEntity<?> uploadProfilePicture(@RequestParam("file") MultipartFile file) {
+    public ResponseEntity<String> uploadProfilePicture(@RequestParam("file") MultipartFile file) {
         try {
+            // 인증된 사용자 이름 추출
             String loginId = getAuthenticatedUserName();
             User user = userService.getUserById(loginId);
 
@@ -228,9 +234,13 @@ public class UserController {
                 return ResponseEntity.status(HttpStatus.NOT_FOUND).body("User not found");
             }
 
+            // 사용자 ID를 기반으로 고유 파일 이름 생성
+            String originalFilename = file.getOriginalFilename();
+            String extension = originalFilename != null ? originalFilename.substring(originalFilename.lastIndexOf(".")) : "";
+            String uniqueFilename = loginId + "_" + UUID.randomUUID().toString() + extension;
+
             // 파일 저장 경로 설정
-            String filename = file.getOriginalFilename();
-            Path path = Paths.get("uploads/profile-pictures/" + filename);
+            Path path = Paths.get("uploads/profile-pictures/" + uniqueFilename);
             Files.createDirectories(path.getParent());
             Files.write(path, file.getBytes());
 
@@ -245,18 +255,20 @@ public class UserController {
         }
     }
 
-    // 키, 몸무게 변경
     @GetMapping("/profile-picture")
-    public ResponseEntity<byte[]> getProfilePicture() {
-
-        String loginId = getAuthenticatedUserName();
-        User user = userService.getUserById(loginId);
-
-        if (user == null || user.getProfilePicture() == null) {
-            return new ResponseEntity<>(HttpStatus.NOT_FOUND);
-        }
-
+    public ResponseEntity<byte[]> getProfilePicture(HttpServletRequest request) {
         try {
+            // JWT 토큰에서 사용자 이름 추출
+            String token = jwtUtil.extractTokenFromRequest(request);
+            String loginId = jwtUtil.extractLoginId(token);
+
+            User user = userService.getUserById(loginId);
+
+            if (user == null || user.getProfilePicture() == null) {
+                return new ResponseEntity<>(HttpStatus.NOT_FOUND);
+            }
+
+            // 프로필 사진 경로에서 파일 가져오기
             Path path = Paths.get(user.getProfilePicture());
             byte[] data = Files.readAllBytes(path);
 
@@ -265,14 +277,17 @@ public class UserController {
             headers.setContentLength(data.length);
 
             return new ResponseEntity<>(data, headers, HttpStatus.OK);
+
         } catch (IOException e) {
             return new ResponseEntity<>(HttpStatus.NOT_FOUND);
+        } catch (Exception e) {
+            return new ResponseEntity<>(HttpStatus.INTERNAL_SERVER_ERROR);
         }
     }
 
     private String getAuthenticatedUserName() {
-        Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
-        return authentication.getName();
+        // SecurityContextHolder에서 인증된 사용자 이름을 추출하는 로직
+        return SecurityContextHolder.getContext().getAuthentication().getName();
     }
 }
 
