@@ -35,6 +35,21 @@ public class PostController {
         return postService.getAllPosts();
     }
 
+    @GetMapping("/user")
+    public ResponseEntity<List<Post>> getPostsByUser(Principal principal) {
+        User user = userService.getUserByPrincipal(principal);
+        if (user == null) {
+            return ResponseEntity.status(401).build(); // 인증되지 않은 사용자
+        }
+
+        List<Post> userPosts = postService.getPostsByUser(user);
+        if (userPosts.isEmpty()) {
+            return ResponseEntity.notFound().build(); // 사용자가 작성한 게시글이 없는 경우
+        }
+
+        return ResponseEntity.ok(userPosts);
+    }
+
     @GetMapping("/{id}")
     public ResponseEntity<Post> getPostById(@PathVariable Long id) {
         Post post = postService.getPostById(id);

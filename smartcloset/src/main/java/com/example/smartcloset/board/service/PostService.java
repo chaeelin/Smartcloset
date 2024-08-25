@@ -55,6 +55,12 @@ public class PostService {
         return postRepository.findById(id).orElseThrow(() -> new RuntimeException("Post not found"));
     }
 
+
+    public List<Post> getPostsByUser(User user) {
+        // 특정 사용자가 작성한 게시글 목록을 반환하는 로직을 구현합니다.
+        return postRepository.findByUser(user);
+    }
+
     public List<Post> searchPostsByTitle(String title) {
         return postRepository.findByTitleContainingIgnoreCase(title);
     }

@@ -1,5 +1,6 @@
 package com.example.smartcloset.board.model;
 
+import com.example.smartcloset.User.entity.User;
 import com.example.smartcloset.comment.entity.CommentEntity;
 import jakarta.persistence.*;
 import lombok.Getter;
@@ -22,6 +23,10 @@ public class Post {
     private LocalDateTime date;
     private String imageUrl;
     private int commentsCount;
+
+    @ManyToOne
+    @JoinColumn(name = "user_id", nullable = false)
+    private User user;
 
     // 댓글과의 연관 관계 설정
     @OneToMany(mappedBy = "post", cascade = CascadeType.ALL, orphanRemoval = true)
