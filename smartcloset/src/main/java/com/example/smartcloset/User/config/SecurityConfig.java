@@ -6,6 +6,7 @@ import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
+import org.springframework.http.HttpMethod;
 import org.springframework.security.config.annotation.web.builders.HttpSecurity;
 import org.springframework.security.config.annotation.web.configuration.EnableWebSecurity;
 import org.springframework.security.config.http.SessionCreationPolicy;
@@ -64,6 +65,7 @@ public class SecurityConfig {
                         .requestMatchers("/api/users/check/loginId").permitAll()
                         .requestMatchers("/error").permitAll()
                         .requestMatchers("/bot/chat").permitAll()
+                        .requestMatchers(HttpMethod.POST, "/api/posts/withImage").permitAll() // 해당 엔드포인트의 POST 요청을 허용
                         .anyRequest().authenticated()
                 )
                 .exceptionHandling(exceptionHandling -> exceptionHandling
