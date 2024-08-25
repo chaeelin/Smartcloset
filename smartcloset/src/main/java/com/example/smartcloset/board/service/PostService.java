@@ -16,6 +16,7 @@ import org.springframework.data.domain.Pageable;
 import org.springframework.data.domain.Sort;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+import org.springframework.util.StringUtils;
 import org.springframework.web.multipart.MultipartFile;
 
 import java.io.IOException;
@@ -144,17 +145,46 @@ public class PostService {
     }
 
     public Post savePostWithImage(String title, String content, MultipartFile imageFile) throws IOException {
-        String fileName = System.currentTimeMillis() + "_" + imageFile.getOriginalFilename();
-        Path path = Paths.get(uploadDir + fileName);
-        Files.createDirectories(path.getParent());
-        Files.write(path, imageFile.getBytes());
+        if (imageFile == null || imageFile.isEmpty()) {
+            throw new IllegalArgumentException("Image file is required.");
+        }
 
+        // 클린 파일 이름 생성
+        String fileName = System.currentTimeMillis() + "_" + StringUtils.cleanPath(imageFile.getOriginalFilename());
+
+        // 파일 저장 경로 설정
+        Path path = Paths.get(uploadDir + fileName);
+
+        // 디렉토리 생성 (존재하지 않는 경우)
+        try {
+            Files.createDirectories(path.getParent());
+        } catch (IOException e) {
+            throw new IOException("Could not create directories to save file.", e);
+        }
+
+        // 파일을 서버에 저장
+        try {
+            Files.write(path, imageFile.getBytes());
+        } catch (IOException e) {
+            throw new IOException("Failed to save image file.", e);
+        }
+
+        // Post 객체 생성 및 데이터베이스에 저장
         Post post = new Post();
         post.setTitle(title);
         post.setContent(content);
-        post.setImageUrl(path.toString());
+
+        // 저장된 파일의 URL을 설정
+        String fileDownloadUri = "/uploads/" + fileName; // 파일에 접근할 수 있는 URL 경로를 사용
+        post.setImageUrl(fileDownloadUri);
+
         post.setDate(LocalDateTime.now());
-        return postRepository.save(post);
+
+        try {
+            return postRepository.save(post);
+        } catch (Exception e) {
+            throw new RuntimeException("Failed to save post to database.", e);
+        }
     }
 
     public List<Post> getLikedPostsByUser(User user) {

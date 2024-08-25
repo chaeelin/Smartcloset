@@ -11,6 +11,7 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.multipart.MultipartFile;
 
+import java.io.IOException;
 import java.security.Principal;
 import java.util.List;
 
@@ -53,16 +54,30 @@ public class PostController {
         return postService.savePost(post);
     }
 
+
+
     @PostMapping("/withImage")
     public ResponseEntity<Post> createPostWithImage(
             @RequestParam("title") String title,
             @RequestParam("content") String content,
-            @RequestPart("imageFile") MultipartFile imageFile) {
+            @RequestPart(value = "imageFile", required = false) MultipartFile imageFile) {
         try {
+            // 이미지 파일이 없는 경우에 대한 예외 처리
+            if (imageFile == null || imageFile.isEmpty()) {
+                return ResponseEntity.status(450).body(null); // 450 에러 반환 (커스텀 코드)
+            }
+
+            // 서비스에서 포스트 저장
             Post post = postService.savePostWithImage(title, content, imageFile);
             return ResponseEntity.ok(post);
+        } catch (IOException e) {
+            // 파일 처리 관련 예외가 발생했을 경우
+            e.printStackTrace(); // 로그 출력
+            return ResponseEntity.status(500).body(null);
         } catch (Exception e) {
-            return ResponseEntity.status(500).build();
+            // 다른 예외가 발생했을 경우
+            e.printStackTrace(); // 로그 출력
+            return ResponseEntity.status(500).body(null);
         }
     }
 
