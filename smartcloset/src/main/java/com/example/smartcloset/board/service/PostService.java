@@ -25,7 +25,7 @@ import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.time.LocalDateTime;
 import java.util.List;
-import java.util.Optional;
+
 import java.util.stream.Collectors;
 
 @Service
@@ -133,8 +133,9 @@ public class PostService {
         if (!postRepository.existsById(id)) {
             return false;  // 게시물이 존재하지 않는 경우 false 반환
         }
-        // 외래 키 제약 조건으로 인해 먼저 댓글 및 좋아요 삭제
-        commentRepository.deleteByPostId(id);
+        // 외래 키 제약 조건으로 인해 먼저 대댓글 및 부모 댓글을 삭제
+        commentRepository.deleteRepliesByPostId(id); // 대댓글 먼저 삭제
+        commentRepository.deleteCommentsByPostId(id); // 부모 댓글 삭제
         likeRepository.deleteByPost(postRepository.findById(id).get());
         postRepository.deleteById(id);
         return true;  // 성공적으로 삭제된 경우 true 반환
