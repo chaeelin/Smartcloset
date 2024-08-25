@@ -3,6 +3,7 @@ package com.example.smartcloset.User.security;
 import io.jsonwebtoken.Claims;
 import io.jsonwebtoken.Jwts;
 import io.jsonwebtoken.SignatureAlgorithm;
+import jakarta.servlet.http.HttpServletRequest;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.stereotype.Component;
@@ -66,5 +67,14 @@ public class JwtUtil {
         Date expiration = claims.getExpiration();
         System.out.println("Extracted expiration date from token: " + expiration);
         return expiration;
+    }
+
+    // HttpServletRequest에서 JWT 토큰 추출 (추가)
+    public String extractTokenFromRequest(HttpServletRequest request) {
+        final String authorizationHeader = request.getHeader("Authorization");
+        if (authorizationHeader != null && authorizationHeader.startsWith("Bearer ")) {
+            return authorizationHeader.substring(7); // "Bearer " 부분을 제거한 토큰 반환
+        }
+        return null;
     }
 }
