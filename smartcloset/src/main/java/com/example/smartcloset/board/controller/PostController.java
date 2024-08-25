@@ -37,9 +37,13 @@ public class PostController {
 
     @GetMapping("/user")
     public ResponseEntity<List<Post>> getPostsByUser(Principal principal) {
+        if (principal == null) {
+            return ResponseEntity.status(401).body(null); // 인증되지 않은 사용자
+        }
+
         User user = userService.getUserByPrincipal(principal);
         if (user == null) {
-            return ResponseEntity.status(401).build(); // 인증되지 않은 사용자
+            return ResponseEntity.status(401).build(); // 사용자 정보를 찾을 수 없는 경우
         }
 
         List<Post> userPosts = postService.getPostsByUser(user);
@@ -65,10 +69,11 @@ public class PostController {
     }
 
     @PostMapping
-    public Post createPost(@RequestBody Post post) {
+    public Post createPost(@RequestBody Post post, Principal principal) {
+        User user = userService.getUserByPrincipal(principal);
+        post.setUser(user);
         return postService.savePost(post);
     }
-
 
 
     @PostMapping("/withImage")
