@@ -151,7 +151,8 @@ public class PostService {
         return postRepository.findByIdGreaterThanOrderByIdAsc(lastPostId, PageRequest.of(0, limit));
     }
 
-    public Post savePostWithImage(String title, String content, MultipartFile imageFile) throws IOException {
+    @Transactional
+    public Post savePostWithImage(String title, String content, MultipartFile imageFile, User user) throws IOException {
         if (imageFile == null || imageFile.isEmpty()) {
             throw new IllegalArgumentException("Image file is required.");
         }
@@ -180,6 +181,7 @@ public class PostService {
         Post post = new Post();
         post.setTitle(title);
         post.setContent(content);
+        post.setUser(user);  // 사용자 정보 설정
 
         // 저장된 파일의 URL을 설정
         String fileDownloadUri = "/uploads/" + fileName; // 파일에 접근할 수 있는 URL 경로를 사용

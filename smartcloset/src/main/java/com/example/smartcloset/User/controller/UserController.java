@@ -57,7 +57,7 @@ public class UserController {
             );
 
             UserResponse userResponse = new UserResponse(
-                    user.getUser_id(),
+                    user.getId(),
                     user.getLoginId(),
                     user.getNickname(),
                     user.getHeight(),
@@ -156,7 +156,7 @@ public class UserController {
             User user = userService.getUserById(loginId);
 
             if (user != null) {
-                userService.updateHeightAndWeight(user.getUser_id(), request.getHeight(), request.getWeight());
+                userService.updateHeightAndWeight(user.getId(), request.getHeight(), request.getWeight());
                 UpdateResponse response = new UpdateResponse(request.getHeight(), request.getWeight());
                 return ResponseEntity.ok(response);
             } else {
@@ -175,7 +175,7 @@ public class UserController {
             User user = userService.getUserById(loginId);
 
             if (user != null) {
-                userService.deleteUser(user.getUser_id());
+                userService.deleteUser(user.getId());
                 return "User deleted successfully.";
             } else {
                 return "User not found.";

@@ -17,7 +17,7 @@ public class User {
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     @Column(name = "user_id")
-    private Long user_id;
+    private Long userId;  // 필드명을 'user_id'에서 'userId'로 변경
 
     @Column(name = "loginId", length = 20, nullable = true, unique = true)
     private String loginId;
@@ -42,7 +42,7 @@ public class User {
     @Column(name = "date", nullable = false, updatable = false, columnDefinition = "TIMESTAMP DEFAULT CURRENT_TIMESTAMP")
     private Timestamp date;
 
-    @Enumerated(EnumType.STRING) // 성별 필드 추가
+    @Enumerated(EnumType.STRING)
     @Column(name = "gender", nullable = false)
     private Gender gender;
 
@@ -51,5 +51,13 @@ public class User {
 
     @Column(name = "kakaoId")
     private String kakaoId;
-}
 
+    // userId 필드에 대한 접근 메서드 추가
+    public Long getId() {
+        return userId;
+    }
+
+    public void setId(Long userId) {
+        this.userId = userId;
+    }
+}

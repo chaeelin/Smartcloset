@@ -75,37 +75,41 @@ public class PostController {
         return postService.savePost(post);
     }
 
-
     @PostMapping("/withImage")
     public ResponseEntity<Post> createPostWithImage(
             @RequestParam("title") String title,
             @RequestParam("content") String content,
-            @RequestPart(value = "imageFile", required = false) MultipartFile imageFile) {
+            @RequestPart(value = "imageFile", required = false) MultipartFile imageFile,
+            Principal principal) {
         try {
-            // 이미지 파일이 없는 경우에 대한 예외 처리
             if (imageFile == null || imageFile.isEmpty()) {
-                return ResponseEntity.status(450).body(null); // 450 에러 반환 (커스텀 코드)
+                return ResponseEntity.badRequest().body(null); // 400 Bad Request 반환
             }
 
-            // 서비스에서 포스트 저장
-            Post post = postService.savePostWithImage(title, content, imageFile);
+            User user = userService.getUserByPrincipal(principal);
+            Post post = postService.savePostWithImage(title, content, imageFile, user);
             return ResponseEntity.ok(post);
         } catch (IOException e) {
-            // 파일 처리 관련 예외가 발생했을 경우
             e.printStackTrace(); // 로그 출력
             return ResponseEntity.status(500).body(null);
         } catch (Exception e) {
-            // 다른 예외가 발생했을 경우
             e.printStackTrace(); // 로그 출력
             return ResponseEntity.status(500).body(null);
         }
     }
 
     @PutMapping("/{id}")
-    public ResponseEntity<Post> updatePost(@PathVariable Long id, @RequestBody Post updatedPost) {
+    public ResponseEntity<Post> updatePost(@PathVariable Long id, @RequestBody Post updatedPost, Principal principal) {
         try {
-            Post post = postService.updatePost(id, updatedPost);
-            return ResponseEntity.ok(post);
+            User user = userService.getUserByPrincipal(principal);
+            Post post = postService.getPostById(id);
+
+            if (post.getUser().getId().equals(user.getId())) {
+                Post updatedPostResult = postService.updatePost(id, updatedPost);
+                return ResponseEntity.ok(updatedPostResult);
+            } else {
+                return ResponseEntity.status(403).build(); // Forbidden: 사용자가 게시글 작성자가 아닌 경우
+            }
         } catch (Exception e) {
             return ResponseEntity.status(404).build();
         }
@@ -164,8 +168,8 @@ public class PostController {
     @GetMapping("/liked/scroll")
     public ResponseEntity<List<Post>> getLikedPostsWithScroll(
             Principal principal,
-            @RequestParam(required = false) Long lastLikedId, // 마지막으로 로드된 좋아요 ID
-            @RequestParam(defaultValue = "10") int limit) { // 가져올 좋아요 개수
+            @RequestParam(required = false) Long lastLikedId,
+            @RequestParam(defaultValue = "10") int limit) {
         User user = userService.getUserByPrincipal(principal);
         List<Post> likedPosts = postService.getLikedPostsByUserWithScroll(user, lastLikedId, limit);
         return ResponseEntity.ok(likedPosts);
