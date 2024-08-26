@@ -101,42 +101,30 @@ public class UserController {
         return ResponseEntity.ok(new LoginResponse(token, user.getLoginId(), user.getNickname()));
     }
 
-
     @PostMapping("/kakao/login")
-    public UserResponse kakaoLogin(@RequestHeader("Authorization") String authorizationHeader) {
-        // "Bearer " 문자열 제거 후 토큰만 추출
+    public ResponseEntity<KakaoResponse> kakaoLogin(@RequestHeader("Authorization") String authorizationHeader) {
         String accessToken = authorizationHeader.replace("Bearer ", "");
+
         KakaoProfile profile = kakaoService.getKakaoProfile(accessToken);
         User user = kakaoService.processKakaoLogin(profile);
-        return new UserResponse(user.getId(), user.getLoginId(), user.getNickname(), user.getHeight(), user.getWeight(), user.getGender(), user.getPlatform());
+
+        if (user != null) {
+            String token = jwtUtil.generateToken(user.getLoginId());
+
+            // KakaoLoginResponse 객체 생성
+            KakaoResponse response = new KakaoResponse(
+                    token,
+                    user.getKakaoId(),
+                    user.getNickname(),
+                    user.getProfilePicture()
+            );
+
+            return ResponseEntity.ok(response);
+        } else {
+            // 사용자 정보가 없을 경우 401 Unauthorized 응답 반환
+            return ResponseEntity.status(401).body(new KakaoResponse(null, null, null, null));
+        }
     }
-
-//    @PostMapping("/kakao/login")
-//    public UserResponse kakaoLogin(@RequestBody KakaoLoginRequest request) {
-//        KakaoProfile profile = kakaoService.getKakaoProfile(request.getAccessToken());
-//        User user = kakaoService.processKakaoLogin(profile);
-//        return new UserResponse(user.getId(), user.getLoginId(), user.getNickname(), user.getHeight(), user.getWeight(), user.getGender(), user.getPlatform());
-//    }
-
-//    // 카카오 소셜 로그인
-//    @PostMapping("/kakao/login")
-//    public ResponseEntity<LoginResponse> kakaoLogin(@RequestBody KakaoLoginRequest request) {
-//        try {
-//            KakaoProfile kakaoProfile = kakaoService.getKakaoProfile(request.getAccessToken());
-//            User user = kakaoService.processKakaoLogin(kakaoProfile);
-//
-//            if (user != null) {
-//                String token = jwtUtil.generateToken(user.getLoginId());
-//                LoginResponse response = new LoginResponse("Login successful", user.getNickname(), token);
-//                return ResponseEntity.ok(response);
-//            } else {
-//                return ResponseEntity.status(401).body(new LoginResponse("Login failed for Kakao ID", null, null));
-//            }
-//
-//        } catch (Exception e) {
-//            return ResponseEntity.status(500).body(new LoginResponse("Error during Kakao login: " + e.getMessage(), null, null));
-//        }
-//    }
 
     // 아이디 중복
     @GetMapping("/check/loginId")
