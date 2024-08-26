@@ -26,10 +26,19 @@ public class UserService {
 
     // Principal 객체를 사용하여 현재 로그인된 사용자 정보를 가져오는 메서드 추가
     public User getUserByPrincipal(Principal principal) {
-        String loginId = principal.getName(); // Principal에서 사용자 이름(로그인 ID)을 가져옴
+        // Principal이 null인지 확인하여 null인 경우 예외를 던짐
+        if (principal == null) {
+            throw new IllegalArgumentException("Principal cannot be null");
+        }
+
+        // Principal에서 사용자 이름(로그인 ID)을 가져옴
+        String loginId = principal.getName();
+
+        // 사용자 이름으로 사용자 정보를 조회하고 반환, 없을 경우 예외를 던짐
         return userRepository.findByLoginId(loginId)
                 .orElseThrow(() -> new IllegalArgumentException("User not found with loginId: " + loginId));
     }
+
 
     public boolean checkLoginId(String loginId) {
         return userRepository.existsByLoginId(loginId);
