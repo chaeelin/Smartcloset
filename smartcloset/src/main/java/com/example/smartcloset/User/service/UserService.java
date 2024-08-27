@@ -17,24 +17,21 @@ public class UserService {
     private final UserRepository userRepository;
     private final PasswordEncoder passwordEncoder;
 
-    // 로그인 ID를 통해 사용자를 조회
+    // ID를 통해 사용자 조회
     public User getUserById(String loginId) {
         System.out.println("Fetching member by loginId: " + loginId);
         return userRepository.findByLoginId(loginId)
                 .orElseThrow(() -> new IllegalArgumentException("Invalid login_id: " + loginId));
     }
 
-    // Principal 객체를 사용하여 현재 로그인된 사용자 정보를 가져오는 메서드 추가
+    // 현재 로그인된 사용자 정보를 가져오기
     public User getUserByPrincipal(Principal principal) {
-        // Principal이 null인지 확인하여 null인 경우 예외를 던짐
         if (principal == null) {
             throw new IllegalArgumentException("Principal cannot be null");
         }
 
-        // Principal에서 사용자 이름(로그인 ID)을 가져옴
         String loginId = principal.getName();
 
-        // 사용자 이름으로 사용자 정보를 조회하고 반환, 없을 경우 예외를 던짐
         return userRepository.findByLoginId(loginId)
                 .orElseThrow(() -> new IllegalArgumentException("User not found with loginId: " + loginId));
     }
@@ -68,39 +65,7 @@ public class UserService {
         return saveUser(user);
     }
 
-    // 네이버
-    public User processNaverUser(OAuth2User oAuth2User) {
-        String loginId = (String) oAuth2User.getAttributes().get("id"); // 유니크한 네이버 ID 사용
-        String nickname = (String) oAuth2User.getAttributes().get("nickname");
-        String profileImage = (String) oAuth2User.getAttributes().get("profile_image");
-        String gender = (String) oAuth2User.getAttributes().get("gender");
-
-        // 사용자가 이미 존재하는지 확인
-        User user = userRepository.findByLoginId(loginId)
-                .orElseGet(() -> {
-                    // 존재하지 않으면 새로운 사용자 등록
-                    User newUser = User.builder()
-                            .loginId(loginId)
-                            .loginPwd(null)
-                            .nickname(nickname)
-                            .height(0)
-                            .weight(0)
-                            .platform(Platform.NAVER)
-                            .date(new Timestamp(System.currentTimeMillis()))
-                            .gender(Gender.valueOf(gender.toUpperCase()))
-                            .profilePicture(profileImage)
-                            .build();
-                    return userRepository.save(newUser);
-                });
-
-        user.setNickname(nickname);
-        user.setProfilePicture(profileImage);
-        userRepository.save(user);
-
-        return user;
-    }
-
-    // 키, 몸무게 수정
+    // 키 몸무게 수정
     public void updateHeightAndWeight(Long userId, Integer height, Integer weight) {
         User user = userRepository.findById(userId)
                 .orElseThrow(() -> new IllegalArgumentException("User not found with id: " + userId));
@@ -114,12 +79,12 @@ public class UserService {
         saveUser(user);
     }
 
-    // 회원 탈퇴
+    // 회원 삭제
     public void deleteUser(Long userId) {
         userRepository.deleteById(userId);
     }
 
-    // 비밀번호 변경
+    // 비번 변경
     public void changePassword(User user, String newPassword) {
         String encryptedPassword = passwordEncoder.encode(newPassword);
         user.setLoginPwd(encryptedPassword);
@@ -132,11 +97,12 @@ public class UserService {
         saveUser(user);
     }
 
+    // 유저 저장
     private User saveUser(User user) {
         return userRepository.save(user);
     }
 
-    // 사용자 업데이트 메서드
+    // 유저 update
     public User updateUser(User user) {
         return userRepository.save(user);
     }

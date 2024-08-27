@@ -4,11 +4,10 @@ import com.example.smartcloset.User.dto.*;
 import com.example.smartcloset.User.entity.User;
 import com.example.smartcloset.User.security.JwtUtil;
 import com.example.smartcloset.User.service.KakaoService;
+//import com.example.smartcloset.User.service.NaverService;
 import com.example.smartcloset.User.service.UserService;
 import jakarta.servlet.http.HttpServletRequest;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.core.io.Resource;
-import org.springframework.core.io.UrlResource;
 import org.springframework.http.*;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.core.context.SecurityContextHolder;
@@ -31,6 +30,7 @@ public class UserController {
     private final JwtUtil jwtUtil;
     private final PasswordEncoder passwordEncoder;
     private final KakaoService kakaoService;
+//    private final NaverService naverService;
 
     @Autowired
     public UserController(UserService userService, JwtUtil jwtUtil, PasswordEncoder passwordEncoder, KakaoService kakaoService) {
@@ -38,6 +38,7 @@ public class UserController {
         this.jwtUtil = jwtUtil;
         this.passwordEncoder = passwordEncoder;
         this.kakaoService = kakaoService;
+//        this.naverService = naverService;
     }
 
     // 회원가입
@@ -90,28 +91,29 @@ public class UserController {
     }
 
 
-    // 네이버 소셜 로그인
-    @GetMapping("/naver/login")
-    public ResponseEntity<LoginResponse> naverLogin(Authentication authentication) {
-        OAuth2User oAuth2User = (OAuth2User) authentication.getPrincipal();
+//    // 네이버 소셜 로그인
+//    @GetMapping("/naver/login")
+//    public ResponseEntity<LoginResponse> naverLogin(Authentication authentication) {
+//        OAuth2User oAuth2User = (OAuth2User) authentication.getPrincipal();
+//
+//        User user = naverService.processNaverUser(oAuth2User);
+//        String token = jwtUtil.generateToken(user.getLoginId());
+//
+//        return ResponseEntity.ok(new LoginResponse(token, user.getLoginId(), user.getNickname()));
+//    }
 
-        User user = userService.processNaverUser(oAuth2User);
-        String token = jwtUtil.generateToken(user.getLoginId());
-
-        return ResponseEntity.ok(new LoginResponse(token, user.getLoginId(), user.getNickname()));
-    }
-
+    // 카카오 로그인
     @PostMapping("/kakao/login")
-    public ResponseEntity<KakaoResponse> kakaoLogin(@RequestHeader("Authorization") String authorizationHeader) {
-        String accessToken = authorizationHeader.replace("Bearer ", "");
+    public ResponseEntity<KakaoResponse> kakaoLogin(@RequestParam("code") String authorizationCode) {
+        System.out.println("Authorization Code: " + authorizationCode);
 
-        KakaoProfile profile = kakaoService.getKakaoProfile(accessToken);
-        User user = kakaoService.processKakaoLogin(profile);
+        // 인가 코드를 사용해 사용자 정보 가져오기
+        User user = kakaoService.processKakaoLogin(authorizationCode);
 
         if (user != null) {
             String token = jwtUtil.generateToken(user.getLoginId());
+            System.out.println("Generated JWT Token: " + token);
 
-            // KakaoLoginResponse 객체 생성
             KakaoResponse response = new KakaoResponse(
                     token,
                     user.getKakaoId(),
@@ -121,7 +123,6 @@ public class UserController {
 
             return ResponseEntity.ok(response);
         } else {
-            // 사용자 정보가 없을 경우 401 Unauthorized 응답 반환
             return ResponseEntity.status(401).body(new KakaoResponse(null, null, null, null));
         }
     }
