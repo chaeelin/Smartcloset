@@ -48,7 +48,8 @@ public class PostService {
     }
 
     public List<Post> getAllPosts() {
-        return postRepository.findAll();
+        // User 정보를 함께 로드하는 JPQL 쿼리 사용
+        return postRepository.findAllWithUser();
     }
 
     public Post getPostById(Long id) {

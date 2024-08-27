@@ -137,11 +137,25 @@ public class PostController {
     }
 
     @DeleteMapping("/{id}")
-    public ResponseEntity<Void> deletePost(@PathVariable Long id) {
-        if (!postService.deletePost(id)) {
-            return ResponseEntity.notFound().build();  // 삭제 실패한 경우 404 Not Found 반환
+    public ResponseEntity<Void> deletePost(@PathVariable Long id, Principal principal) {
+        try {
+            User user = userService.getUserByPrincipal(principal);
+            Post post = postService.getPostById(id);
+
+            if (post == null) {
+                return ResponseEntity.notFound().build();  // 게시글을 찾을 수 없는 경우
+            }
+
+            if (!post.getUser().getId().equals(user.getId())) {
+                return ResponseEntity.status(403).build(); // 사용자가 게시글 작성자가 아닌 경우
+            }
+
+            postService.deletePost(id);
+            return ResponseEntity.noContent().build();  // 성공적으로 삭제된 경우
+        } catch (Exception e) {
+            e.printStackTrace(); // 로그 출력
+            return ResponseEntity.status(500).build();  // 서버 내부 오류 반환
         }
-        return ResponseEntity.noContent().build();  // 성공적으로 삭제된 경우 204 No Content 반환
     }
 
     @GetMapping("/loadMore")
