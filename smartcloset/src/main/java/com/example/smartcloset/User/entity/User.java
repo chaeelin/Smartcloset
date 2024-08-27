@@ -43,7 +43,7 @@ public class User {
     private Timestamp date;
 
     @Enumerated(EnumType.STRING)
-    @Column(name = "gender", nullable = false)
+    @Column(name = "gender", nullable = true)
     private Gender gender;
 
     @Column(name = "profilePicture")
@@ -52,7 +52,6 @@ public class User {
     @Column(name = "kakaoId")
     private String kakaoId;
 
-    // userId 필드에 대한 접근 메서드 추가
     public Long getId() {
         return userId;
     }

@@ -3,11 +3,15 @@ package com.example.smartcloset.User.security;
 import io.jsonwebtoken.Claims;
 import io.jsonwebtoken.Jwts;
 import io.jsonwebtoken.SignatureAlgorithm;
+import io.jsonwebtoken.security.Keys;
 import jakarta.servlet.http.HttpServletRequest;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.stereotype.Component;
 
+import javax.crypto.spec.SecretKeySpec;
+import java.nio.charset.StandardCharsets;
+import java.security.Key;
 import java.util.Date;
 
 @Component
@@ -23,18 +27,25 @@ public class JwtUtil {
         Date expiration = new Date(now.getTime() + EXPIRATION_TIME);
         System.out.println("Generating token. Current Time: " + now + ", Expiration Time: " + expiration);
 
+        Key key = new SecretKeySpec(SECRET_KEY.getBytes(StandardCharsets.UTF_8), SignatureAlgorithm.HS512.getJcaName());
+
         return Jwts.builder()
                 .setSubject(loginId)
                 .setIssuedAt(now) // 발급 시간 설정
                 .setExpiration(expiration)
-                .signWith(SignatureAlgorithm.HS512, SECRET_KEY)
+                .signWith(key, SignatureAlgorithm.HS512)
                 .compact();
     }
 
-    // 자동 로그인 test을 위한.
+    // 키 생성
+    private Key getSigningKey() {
+        return Keys.hmacShaKeyFor(SECRET_KEY.getBytes());
+    }
+
     public String extractLoginId(String token) {
-        String loginId = Jwts.parser()
-                .setSigningKey(SECRET_KEY)
+        String loginId = Jwts.parserBuilder()
+                .setSigningKey(getSigningKey())
+                .build()
                 .parseClaimsJws(token.replace("Bearer ", ""))
                 .getBody()
                 .getSubject();
@@ -51,17 +62,24 @@ public class JwtUtil {
     }
 
     private Boolean isTokenExpired(String token) {
-        final Date expiration = Jwts.parser().setSigningKey(SECRET_KEY).parseClaimsJws(token).getBody().getExpiration();
+        final Date expiration = Jwts.parserBuilder()
+                .setSigningKey(getSigningKey())
+                .build()
+                .parseClaimsJws(token)
+                .getBody()
+                .getExpiration();
+
         boolean isExpired = expiration.before(new Date());
         System.out.println("Token expiration time: " + expiration + ". Is token expired: " + isExpired);
         return isExpired;
     }
 
-    // 만료 시간을 출력하는 메서드 추가
+    // 만료 시간을 출력하는 메서드
     public Date getExpirationDateFromToken(String token) {
-        Claims claims = Jwts.parser()
-                .setSigningKey(SECRET_KEY)
-                .parseClaimsJws(token.replace("Bearer ", ""))
+        Claims claims = Jwts.parserBuilder()
+                .setSigningKey(getSigningKey())
+                .build()
+                .parseClaimsJws(token.replace("Bearer ", ""))  // 토큰 파싱
                 .getBody();
 
         Date expiration = claims.getExpiration();
@@ -69,11 +87,11 @@ public class JwtUtil {
         return expiration;
     }
 
-    // HttpServletRequest에서 JWT 토큰 추출 (추가)
+    // JWT 토큰 추출
     public String extractTokenFromRequest(HttpServletRequest request) {
         final String authorizationHeader = request.getHeader("Authorization");
         if (authorizationHeader != null && authorizationHeader.startsWith("Bearer ")) {
-            return authorizationHeader.substring(7); // "Bearer " 부분을 제거한 토큰 반환
+            return authorizationHeader.substring(7);
         }
         return null;
     }
