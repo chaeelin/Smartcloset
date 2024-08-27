@@ -62,6 +62,7 @@ public class SecurityConfig {
                         .requestMatchers("/api/users/check/loginId").permitAll()
                         .requestMatchers("/error").permitAll()
                         .requestMatchers("/bot/chat").permitAll()
+
                         // 게시판 관련 요청
                         .requestMatchers(HttpMethod.GET, "/api/posts").permitAll() // 모든 사용자가 게시글 조회 가능
                         .requestMatchers(HttpMethod.GET, "/api/posts/user").authenticated() // 사용자 자신의 게시글 조회는 인증 필요
@@ -71,12 +72,16 @@ public class SecurityConfig {
                         .requestMatchers(HttpMethod.GET, "/api/posts/{postId}/comments").permitAll() // 특정 게시글 댓글 조회는 모두 허용
                         .requestMatchers(HttpMethod.GET, "/api/posts/liked").authenticated() // 사용자가 좋아요한 게시글 조회는 인증 필요
                         .requestMatchers(HttpMethod.GET, "/api/posts/liked/scroll").authenticated() // 스크롤로 좋아요한 게시글 조회는 인증 필요
+
                         .requestMatchers(HttpMethod.POST, "/api/posts").authenticated()  // 게시글 생성은 인증된 사용자만 허용
                         .requestMatchers(HttpMethod.POST, "/api/posts/withImage").authenticated() // 이미지 포함 게시글 작성은 인증된 사용자만 허용
+
                         .requestMatchers(HttpMethod.PUT, "/api/posts/{id}").authenticated() // 게시글 수정은 인증된 사용자만 허용
                         .requestMatchers(HttpMethod.PUT, "/api/posts/{id}/like").authenticated() // 게시글 좋아요 추가는 인증된 사용자만 허용
+
                         .requestMatchers(HttpMethod.DELETE, "/api/posts/{id}/like").authenticated() // 게시글 좋아요 취소는 인증된 사용자만 허용
                         .requestMatchers(HttpMethod.DELETE, "/api/posts/{id}").authenticated() // 게시글 삭제는 인증된 사용자만 허용
+
                         .anyRequest().authenticated() // 그 외 모든 요청은 인증 필요
                 )
                 .exceptionHandling(exceptionHandling -> exceptionHandling
@@ -85,9 +90,6 @@ public class SecurityConfig {
                 )
                 .sessionManagement(sessionManagement -> sessionManagement
                         .sessionCreationPolicy(SessionCreationPolicy.STATELESS)); // 세션 상태 유지하지 않음
-
-
-
 
         http.addFilterBefore(jwtRequestFilter, UsernamePasswordAuthenticationFilter.class);
         return http.build();
