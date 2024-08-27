@@ -2,6 +2,7 @@ package com.example.smartcloset.board.model;
 
 import com.example.smartcloset.User.entity.User;
 import com.example.smartcloset.comment.entity.CommentEntity;
+import com.fasterxml.jackson.annotation.JsonManagedReference;
 import jakarta.persistence.*;
 import lombok.Getter;
 import lombok.Setter;
@@ -26,6 +27,7 @@ public class Post {
 
     @ManyToOne(fetch = FetchType.LAZY) // Lazy Loading으로 변경하여 필요할 때만 로드되도록 설정
     @JoinColumn(name = "user_id", nullable = false)
+    @JsonManagedReference // JSON 직렬화 시 참조 관리
     private User user;
 
     // 댓글과의 연관 관계 설정
