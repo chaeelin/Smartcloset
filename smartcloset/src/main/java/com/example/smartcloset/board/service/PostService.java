@@ -10,6 +10,7 @@ import com.example.smartcloset.board.repository.LikeRepository;
 import com.example.smartcloset.comment.entity.CommentEntity;
 import com.example.smartcloset.comment.repository.CommentRepository;
 import com.example.smartcloset.User.entity.User;
+import com.example.smartcloset.User.service.UserService;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.data.domain.PageRequest;
@@ -34,16 +35,18 @@ public class PostService {
     private final PostRepository postRepository;
     private final CommentRepository commentRepository;
     private final LikeRepository likeRepository;
+    private final UserService userService;  // UserService 추가
     private final ApplicationEventPublisher eventPublisher;
 
     @Value("${file.upload-dir}")
     private String uploadDir;
 
     public PostService(PostRepository postRepository, CommentRepository commentRepository,
-                       LikeRepository likeRepository, ApplicationEventPublisher eventPublisher) {
+                       LikeRepository likeRepository, UserService userService, ApplicationEventPublisher eventPublisher) {
         this.postRepository = postRepository;
         this.commentRepository = commentRepository;
         this.likeRepository = likeRepository;
+        this.userService = userService;  // UserService 주입
         this.eventPublisher = eventPublisher;
     }
 
@@ -243,10 +246,15 @@ public class PostService {
         );
     }
 
-    // DTO를 엔티티로 변환하는 메서드
     public Post convertToEntity(PostDTO postDto) {
-        User user = new User(); // 실제로는 사용자 조회 로직이 필요합니다.
-        user.setId(postDto.getUserId());
+        User user = null;
+        if (postDto.getUserId() != null) {
+            // userId가 존재할 경우 UserService를 통해 User 객체를 조회합니다.
+            user = userService.getUserById(postDto.getUserId());
+            if (user == null) {
+                throw new IllegalArgumentException("Invalid user ID: " + postDto.getUserId());
+            }
+        }
 
         Post post = new Post();
         post.setId(postDto.getId());

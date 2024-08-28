@@ -97,11 +97,17 @@ public class PostController {
             }
 
             // PostDTO에 사용자 정보 설정
-            postDto.setNickname(user.getNickname());  // 올바른 사용자 닉네임 설정
-            postDto.setLoginId(user.getLoginId());    // 올바른 사용자 loginId 설정
+            postDto.setUserId(user.getId());
+            postDto.setNickname(user.getNickname());
+            postDto.setLoginId(user.getLoginId());
 
             // 게시글 저장
             PostDTO savedPostDto = postService.savePost(postDto);
+
+            // 저장된 데이터의 nickname과 loginId 확인
+            System.out.println("Saved Post Nickname: " + savedPostDto.getNickname());
+            System.out.println("Saved Post LoginId: " + savedPostDto.getLoginId());
+
             return ResponseEntity.ok(savedPostDto);
         } catch (IllegalArgumentException e) {
             System.err.println("Illegal argument: " + e.getMessage());
