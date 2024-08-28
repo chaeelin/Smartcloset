@@ -28,12 +28,12 @@ public class NotificationService {
 
         OkHttpClient client = new OkHttpClient();
         RequestBody requestBody = RequestBody.create(message,
-                MediaType.get("application/json; charset=utf-8"));
+                MediaType.get("application/json"));
         Request request = new Request.Builder()
                 .url(API_URL)
                 .post(requestBody)
                 .addHeader(HttpHeaders.AUTHORIZATION, "Bearer " + getAccessToken())
-                .addHeader(HttpHeaders.CONTENT_TYPE, "application/json; UTF-8")
+                .addHeader(HttpHeaders.CONTENT_TYPE, "application/json")
                 .build();
 
         Response response = client.newCall(request).execute();
