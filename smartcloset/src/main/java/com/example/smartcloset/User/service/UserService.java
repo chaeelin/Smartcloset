@@ -10,6 +10,7 @@ import org.springframework.stereotype.Service;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import java.security.Principal;
 import java.sql.Timestamp;
+import java.util.Optional;
 
 @Service
 @RequiredArgsConstructor
@@ -24,6 +25,7 @@ public class UserService {
                 .orElseThrow(() -> new IllegalArgumentException("Invalid login_id: " + loginId));
     }
 
+
     // userId를 통해 사용자 조회
     public User getUserById(Long userId) {
         if (userId == null) {
@@ -35,6 +37,13 @@ public class UserService {
         return userRepository.findById(userId)
                 .orElseThrow(() -> new IllegalArgumentException("Invalid user ID: " + userId));
     }
+
+
+    public Optional<User> findByKakaoId(String kakaoId) {
+        return userRepository.findByKakaoId(kakaoId);
+    }
+
+
 
     // 현재 로그인된 사용자 정보를 가져오기
     public User getUserByPrincipal(Principal principal) {

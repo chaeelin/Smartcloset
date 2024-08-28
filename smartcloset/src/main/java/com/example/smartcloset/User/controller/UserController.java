@@ -17,6 +17,7 @@ import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
+import java.util.Optional;
 import java.util.UUID;
 
 @RestController
@@ -85,16 +86,14 @@ public class UserController {
         }
     }
 
-
     @PostMapping("/kakao/login")
-    public ResponseEntity<KakaoResponse> kakaoLogin(@RequestParam("code") String authorizationCode) {
-        System.out.println("Authorization Code: " + authorizationCode);
+    public ResponseEntity<KakaoResponse> kakaoLogin(@RequestBody KakaoUserDto kakaoUserDto) {
+        Optional<User> existingUser = userService.findByKakaoId(kakaoUserDto.getKakaoId());
 
-        // 인가 코드를 사용해 사용자 정보 가져오기
-        User user = kakaoService.processKakaoLogin(authorizationCode);
-
-        if (user != null) {
+        if (existingUser.isPresent()) {
+            User user = existingUser.get();
             String token = jwtUtil.generateToken(user.getLoginId(), user.getId());  // 두 개의 매개변수 전달
+            System.out.println("로그인");
             System.out.println("Generated JWT Token: " + token);
 
             KakaoResponse response = new KakaoResponse(
@@ -106,7 +105,19 @@ public class UserController {
 
             return ResponseEntity.ok(response);
         } else {
-            return ResponseEntity.status(401).body(new KakaoResponse(null, null, null, null));
+            User newUser = kakaoService.saveKakaoUser(kakaoUserDto);
+            String token = jwtUtil.generateToken(newUser.getLoginId(), newUser.getId());  // 두 개의 매개변수 전달
+            System.out.println("회원가입");
+            System.out.println("Generated JWT Token: " + token);
+
+            KakaoResponse response = new KakaoResponse(
+                    token,
+                    newUser.getKakaoId(),
+                    newUser.getNickname(),
+                    newUser.getProfilePicture()
+            );
+
+            return ResponseEntity.ok(response);
         }
     }
 

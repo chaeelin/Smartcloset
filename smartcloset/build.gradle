@@ -55,9 +55,6 @@ dependencies {
 	implementation 'javax.persistence:javax.persistence-api:2.2'
 	implementation 'javax.servlet:javax.servlet-api:4.0.1'
 
-	// swagger
-	implementation 'org.springdoc:springdoc-openapi-starter-webmvc-ui:2.2.0'
-
 	// profile
 	implementation 'org.springframework.boot:spring-boot-starter-thymeleaf'
 
@@ -68,7 +65,7 @@ dependencies {
 	implementation 'com.google.firebase:firebase-admin:6.8.1'
 	implementation group: 'com.squareup.okhttp3', name: 'okhttp', version: '4.2.2'
 
-	implementation 'com.fasterxml.jackson.datatype:jackson-datatype-hibernate5:2.15.2' // Jackson 버전에 따라 변경
+	implementation 'com.fasterxml.jackson.datatype:jackson-datatype-hibernate5:2.15.2'
 
 	implementation 'io.jsonwebtoken:jjwt-api:0.11.5'
 	implementation 'io.jsonwebtoken:jjwt-impl:0.11.5'
