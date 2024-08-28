@@ -87,7 +87,7 @@ public class CommentService {
      * fixedDelay에 설정된 시간마다 redis에 저장된
      * 댓글의 신고 수를 업데이트
      */
-    @Scheduled(fixedDelay = 3000000)
+    @Scheduled(fixedDelay = 3000000, initialDelay = 3000000)
     public void reportCountToDB() {
         Set<String> allKeys = redisService.getAllKeys();
         List<Long> onlyKeys = allKeys.stream()
