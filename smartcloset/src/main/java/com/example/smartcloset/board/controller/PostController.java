@@ -6,7 +6,10 @@ import com.example.smartcloset.board.service.PostService;
 import com.example.smartcloset.comment.entity.CommentEntity;
 import com.example.smartcloset.User.entity.User;
 import com.example.smartcloset.User.service.UserService;
+import com.example.smartcloset.User.security.JwtUtil;  // JwtUtil import 추가
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.context.ApplicationEventPublisher;
+import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.multipart.MultipartFile;
@@ -14,6 +17,7 @@ import org.springframework.web.multipart.MultipartFile;
 import java.io.IOException;
 import java.security.Principal;
 import java.util.List;
+import jakarta.servlet.http.HttpServletRequest;
 
 @RestController
 @RequestMapping("/api/posts")
@@ -22,12 +26,15 @@ public class PostController {
     private final PostService postService;
     private final UserService userService;
     private final ApplicationEventPublisher eventPublisher;
+    private final JwtUtil jwtUtil;  // JwtUtil 필드 추가
 
     // 생성자 주입
-    public PostController(PostService postService, UserService userService, ApplicationEventPublisher eventPublisher) {
+    @Autowired  // 주입을 위한 @Autowired 추가
+    public PostController(PostService postService, UserService userService, ApplicationEventPublisher eventPublisher, JwtUtil jwtUtil) {
         this.postService = postService;
         this.userService = userService;
         this.eventPublisher = eventPublisher;
+        this.jwtUtil = jwtUtil;  // JwtUtil 주입
     }
 
     @GetMapping
@@ -67,25 +74,42 @@ public class PostController {
     }
 
     @PostMapping
-    public ResponseEntity<PostDTO> createPost(@RequestBody PostDTO postDto, Principal principal) {
-        // loginId를 사용하여 User 객체 조회
-        String loginId = postDto.getLoginId(); // userEmail 필드를 loginId로 사용합니다.
+    public ResponseEntity<PostDTO> createPost(@RequestBody PostDTO postDto, HttpServletRequest request) {
+        try {
+            // JWT 토큰에서 유저 정보 추출
+            String token = jwtUtil.extractTokenFromRequest(request);
+            if (token == null) {
+                System.err.println("Token is null");
+                return ResponseEntity.status(HttpStatus.UNAUTHORIZED).build();
+            }
 
-        if (loginId == null) {
-            return ResponseEntity.badRequest().body(null); // loginId가 null인 경우
+            Long userId = jwtUtil.extractUserId(token);
+            if (userId == null) {
+                System.err.println("User ID extracted from token is null");
+                return ResponseEntity.status(HttpStatus.UNAUTHORIZED).build();
+            }
+
+            // UserService를 사용하여 User 엔티티 조회
+            User user = userService.getUserById(userId);
+            if (user == null) {
+                System.err.println("No user found with userId: " + userId);
+                return ResponseEntity.badRequest().build();
+            }
+
+            // PostDTO에 사용자 정보 설정
+            postDto.setNickname(user.getNickname());  // 올바른 사용자 닉네임 설정
+            postDto.setLoginId(user.getLoginId());    // 올바른 사용자 loginId 설정
+
+            // 게시글 저장
+            PostDTO savedPostDto = postService.savePost(postDto);
+            return ResponseEntity.ok(savedPostDto);
+        } catch (IllegalArgumentException e) {
+            System.err.println("Illegal argument: " + e.getMessage());
+            return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(null);
+        } catch (Exception e) {
+            e.printStackTrace();
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(null);
         }
-
-        User user = userService.getUserById(loginId);
-        if (user == null) {
-            return ResponseEntity.badRequest().body(null); // 유효하지 않은 loginId인 경우
-        }
-
-        // PostDTO에 사용자 정보 설정
-        postDto.setUserId(user.getId());
-        postDto.setUserName(user.getNickname());
-
-        PostDTO savedPostDto = postService.savePost(postDto);
-        return ResponseEntity.ok(savedPostDto);
     }
 
     @PostMapping("/withImage")

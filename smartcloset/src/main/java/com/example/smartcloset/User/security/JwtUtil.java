@@ -22,7 +22,7 @@ public class JwtUtil {
 
     private static final long EXPIRATION_TIME = 86400000; // 일반 로그인 만료기간 : 1일
 
-    public String generateToken(String loginId) {
+    public String generateToken(String loginId, Long userId) {  // userId 추가
         Date now = new Date(System.currentTimeMillis());
         Date expiration = new Date(now.getTime() + EXPIRATION_TIME);
         System.out.println("Generating token. Current Time: " + now + ", Expiration Time: " + expiration);
@@ -31,6 +31,8 @@ public class JwtUtil {
 
         return Jwts.builder()
                 .setSubject(loginId)
+                .claim("loginId", loginId)
+                .claim("userId", userId)  // userId claim 추가
                 .setIssuedAt(now) // 발급 시간 설정
                 .setExpiration(expiration)
                 .signWith(key, SignatureAlgorithm.HS512)
@@ -51,6 +53,21 @@ public class JwtUtil {
                 .getSubject();
         System.out.println("Extracted Login ID from token: " + loginId);
         return loginId;
+    }
+
+    // 새로운 메서드 추가: userId 추출
+    public Long extractUserId(String token) {
+        Claims claims = Jwts.parserBuilder()
+                .setSigningKey(getSigningKey())
+                .build()
+                .parseClaimsJws(token.replace("Bearer ", ""))
+                .getBody();
+
+        System.out.println("Claims: " + claims); // 클레임 내용 출력
+
+        Long userId = claims.get("userId", Long.class);  // userId를 Long 타입으로 추출
+        System.out.println("Extracted User ID from token: " + userId);
+        return userId;
     }
 
     // token 유효성 확인을 위한

@@ -4,15 +4,12 @@ import com.example.smartcloset.User.dto.*;
 import com.example.smartcloset.User.entity.User;
 import com.example.smartcloset.User.security.JwtUtil;
 import com.example.smartcloset.User.service.KakaoService;
-//import com.example.smartcloset.User.service.NaverService;
 import com.example.smartcloset.User.service.UserService;
 import jakarta.servlet.http.HttpServletRequest;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.*;
-import org.springframework.security.core.Authentication;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.security.crypto.password.PasswordEncoder;
-import org.springframework.security.oauth2.core.user.OAuth2User;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.multipart.MultipartFile;
 
@@ -30,7 +27,6 @@ public class UserController {
     private final JwtUtil jwtUtil;
     private final PasswordEncoder passwordEncoder;
     private final KakaoService kakaoService;
-//    private final NaverService naverService;
 
     @Autowired
     public UserController(UserService userService, JwtUtil jwtUtil, PasswordEncoder passwordEncoder, KakaoService kakaoService) {
@@ -38,7 +34,6 @@ public class UserController {
         this.jwtUtil = jwtUtil;
         this.passwordEncoder = passwordEncoder;
         this.kakaoService = kakaoService;
-//        this.naverService = naverService;
     }
 
     // 회원가입
@@ -74,13 +69,13 @@ public class UserController {
         }
     }
 
-    // 일반 로그인
+    // 일반로그인
     @PostMapping("/login")
     public LoginResponse login(@RequestBody LoginRequest request) {
         try {
-            User user = userService.getUserById(request.getLoginId());
+            User user = userService.getUserByLoginId(request.getLoginId());
             if (user != null && passwordEncoder.matches(request.getLoginPwd(), user.getLoginPwd())) {
-                String token = jwtUtil.generateToken(user.getLoginId());
+                String token = jwtUtil.generateToken(user.getLoginId(), user.getId());  // 두 개의 매개변수 전달
                 return new LoginResponse(token, request.getLoginId(), user.getNickname());
             } else {
                 return new LoginResponse(null, request.getLoginId(), null);
@@ -91,18 +86,6 @@ public class UserController {
     }
 
 
-//    // 네이버 소셜 로그인
-//    @GetMapping("/naver/login")
-//    public ResponseEntity<LoginResponse> naverLogin(Authentication authentication) {
-//        OAuth2User oAuth2User = (OAuth2User) authentication.getPrincipal();
-//
-//        User user = naverService.processNaverUser(oAuth2User);
-//        String token = jwtUtil.generateToken(user.getLoginId());
-//
-//        return ResponseEntity.ok(new LoginResponse(token, user.getLoginId(), user.getNickname()));
-//    }
-
-    // 카카오 로그인
     @PostMapping("/kakao/login")
     public ResponseEntity<KakaoResponse> kakaoLogin(@RequestParam("code") String authorizationCode) {
         System.out.println("Authorization Code: " + authorizationCode);
@@ -111,7 +94,7 @@ public class UserController {
         User user = kakaoService.processKakaoLogin(authorizationCode);
 
         if (user != null) {
-            String token = jwtUtil.generateToken(user.getLoginId());
+            String token = jwtUtil.generateToken(user.getLoginId(), user.getId());  // 두 개의 매개변수 전달
             System.out.println("Generated JWT Token: " + token);
 
             KakaoResponse response = new KakaoResponse(
@@ -131,11 +114,9 @@ public class UserController {
     @GetMapping("/check/loginId")
     public CheckResponse checkLoginId(@RequestParam String loginId) {
         if (userService.checkLoginId(loginId)) {
-            // loginId가 이미 존재하는 경우
-            return new CheckResponse(false);
+            return new CheckResponse(false); // loginId가 이미 존재하는 경우
         } else {
-            // loginId가 존재하지 않는 경우
-            return new CheckResponse(true);
+            return new CheckResponse(true);  // loginId가 존재하지 않는 경우
         }
     }
 
@@ -146,11 +127,7 @@ public class UserController {
             return new CheckResponse(false);
         } else {
             boolean exists = userService.checkNickname(nickname);
-            if (exists) {
-                return new CheckResponse(false);
-            } else {
-                return new CheckResponse(true);
-            }
+            return new CheckResponse(!exists);
         }
     }
 
@@ -158,8 +135,8 @@ public class UserController {
     @PatchMapping("profile/update")
     public ResponseEntity<UpdateResponse> updateHeightAndWeight(@RequestBody UpdateRequest request) {
         try {
-            String loginId = getAuthenticatedUserName();
-            User user = userService.getUserById(loginId);
+            Long userId = getAuthenticatedUserId(); // userId를 가져오는 메서드로 변경
+            User user = userService.getUserById(userId);
 
             if (user != null) {
                 userService.updateHeightAndWeight(user.getId(), request.getHeight(), request.getWeight());
@@ -177,8 +154,8 @@ public class UserController {
     @DeleteMapping("profile/delete")
     public String deleteUser() {
         try {
-            String loginId = getAuthenticatedUserName();
-            User user = userService.getUserById(loginId);
+            Long userId = getAuthenticatedUserId();
+            User user = userService.getUserById(userId);
 
             if (user != null) {
                 userService.deleteUser(user.getId());
@@ -195,8 +172,8 @@ public class UserController {
     @PatchMapping("/change/password")
     public ResponseEntity<String> changePassword(@RequestBody PasswordChangeRequest request) {
         try {
-            String loginId = getAuthenticatedUserName();
-            User user = userService.getUserById(loginId);
+            Long userId = getAuthenticatedUserId();
+            User user = userService.getUserById(userId);
 
             if (!passwordEncoder.matches(request.getCurrentPassword(), user.getLoginPwd())) {
                 return ResponseEntity.status(HttpStatus.BAD_REQUEST).body("Current password is incorrect.");
@@ -213,8 +190,8 @@ public class UserController {
     @PatchMapping("/change/nickname")
     public ResponseEntity<String> changeNickname(@RequestBody NicknameChangeRequest request) {
         try {
-            String loginId = getAuthenticatedUserName();
-            User user = userService.getUserById(loginId);
+            Long userId = getAuthenticatedUserId();
+            User user = userService.getUserById(userId);
 
             if (user == null) {
                 return ResponseEntity.status(HttpStatus.BAD_REQUEST).body("User not found or invalid.");
@@ -227,31 +204,26 @@ public class UserController {
         }
     }
 
-
     // 프로필 사진 설정
     @PutMapping(value = "/profile-picture", consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
     public ResponseEntity<String> uploadProfilePicture(@RequestParam("file") MultipartFile file) {
         try {
-            // 인증된 사용자 이름 추출
-            String loginId = getAuthenticatedUserName();
-            User user = userService.getUserById(loginId);
+            Long userId = getAuthenticatedUserId();
+            User user = userService.getUserById(userId);
 
             if (user == null) {
                 return ResponseEntity.status(HttpStatus.NOT_FOUND).body("User not found");
             }
 
-            // 사용자 ID를 기반으로 고유 파일 이름 생성
             String originalFilename = file.getOriginalFilename();
             String extension = originalFilename != null ? originalFilename.substring(originalFilename.lastIndexOf(".")) : "";
-            String uniqueFilename = loginId + "_" + UUID.randomUUID().toString() + extension;
+            String uniqueFilename = userId + "_" + UUID.randomUUID().toString() + extension;
 
-            // 파일 저장 경로 설정
             Path path = Paths.get("uploads/profile-pictures/" + uniqueFilename);
             Files.createDirectories(path.getParent());
             Files.write(path, file.getBytes());
 
-            // 사용자 엔티티에 프로필 사진 경로 저장
-            user.setProfilePicture(path.toString()); // 전체 파일 경로 저장
+            user.setProfilePicture(path.toString());
             userService.updateUser(user);
 
             return ResponseEntity.ok("File uploaded successfully and profile picture updated");
@@ -264,17 +236,15 @@ public class UserController {
     @GetMapping("/profile-picture")
     public ResponseEntity<byte[]> getProfilePicture(HttpServletRequest request) {
         try {
-            // JWT 토큰에서 사용자 이름 추출
             String token = jwtUtil.extractTokenFromRequest(request);
-            String loginId = jwtUtil.extractLoginId(token);
+            Long userId = jwtUtil.extractUserId(token); // userId를 추출하는 메서드 사용
 
-            User user = userService.getUserById(loginId);
+            User user = userService.getUserById(userId);
 
             if (user == null || user.getProfilePicture() == null) {
                 return new ResponseEntity<>(HttpStatus.NOT_FOUND);
             }
 
-            // 프로필 사진 경로에서 파일 가져오기
             Path path = Paths.get(user.getProfilePicture());
             byte[] data = Files.readAllBytes(path);
 
@@ -283,17 +253,16 @@ public class UserController {
             headers.setContentLength(data.length);
 
             return new ResponseEntity<>(data, headers, HttpStatus.OK);
-
         } catch (IOException e) {
             return new ResponseEntity<>(HttpStatus.NOT_FOUND);
         } catch (Exception e) {
             return new ResponseEntity<>(HttpStatus.INTERNAL_SERVER_ERROR);
         }
     }
-
-    private String getAuthenticatedUserName() {
-        // SecurityContextHolder에서 인증된 사용자 이름을 추출하는 로직
-        return SecurityContextHolder.getContext().getAuthentication().getName();
+    private Long getAuthenticatedUserId() {
+        // SecurityContextHolder에서 인증된 사용자 ID를 추출하는 로직
+        String loginId = SecurityContextHolder.getContext().getAuthentication().getName();
+        User user = userService.getUserByLoginId(loginId);
+        return user.getId();
     }
 }
-

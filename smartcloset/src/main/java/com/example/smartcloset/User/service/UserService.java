@@ -17,31 +17,46 @@ public class UserService {
     private final UserRepository userRepository;
     private final PasswordEncoder passwordEncoder;
 
-    // ID를 통해 사용자 조회
-    public User getUserById(String loginId) {
+    // loginId를 통해 사용자 조회
+    public User getUserByLoginId(String loginId) {
         System.out.println("Fetching member by loginId: " + loginId);
         return userRepository.findByLoginId(loginId)
                 .orElseThrow(() -> new IllegalArgumentException("Invalid login_id: " + loginId));
     }
 
+    // userId를 통해 사용자 조회
+    public User getUserById(Long userId) {
+        if (userId == null) {
+            System.err.println("getUserById called with null userId");
+            throw new IllegalArgumentException("User ID cannot be null");
+        }
+
+        System.out.println("Fetching user by userId: " + userId);
+        return userRepository.findById(userId)
+                .orElseThrow(() -> new IllegalArgumentException("Invalid user ID: " + userId));
+    }
+
     // 현재 로그인된 사용자 정보를 가져오기
     public User getUserByPrincipal(Principal principal) {
         if (principal == null) {
+            System.err.println("getUserByPrincipal called with null principal");
             throw new IllegalArgumentException("Principal cannot be null");
         }
 
         String loginId = principal.getName();
+        System.out.println("Fetching user by principal loginId: " + loginId);
 
         return userRepository.findByLoginId(loginId)
                 .orElseThrow(() -> new IllegalArgumentException("User not found with loginId: " + loginId));
     }
 
-
     public boolean checkLoginId(String loginId) {
+        System.out.println("Checking existence of loginId: " + loginId);
         return userRepository.existsByLoginId(loginId);
     }
 
     public boolean checkNickname(String nickname) {
+        System.out.println("Checking existence of nickname: " + nickname);
         return userRepository.existsByNickname(nickname);
     }
 
@@ -81,6 +96,7 @@ public class UserService {
 
     // 회원 삭제
     public void deleteUser(Long userId) {
+        System.out.println("Deleting user with userId: " + userId);
         userRepository.deleteById(userId);
     }
 
@@ -99,11 +115,13 @@ public class UserService {
 
     // 유저 저장
     private User saveUser(User user) {
+        System.out.println("Saving user: " + user);
         return userRepository.save(user);
     }
 
     // 유저 update
     public User updateUser(User user) {
+        System.out.println("Updating user: " + user);
         return userRepository.save(user);
     }
 }
