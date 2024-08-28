@@ -1,8 +1,9 @@
 package com.example.smartcloset.board.service;
 
+import com.example.smartcloset.board.model.Post;
+import com.example.smartcloset.board.model.PostDTO;
 import com.example.smartcloset.board.event.LikeEvent;
 import com.example.smartcloset.board.event.TopPostEvent;
-import com.example.smartcloset.board.model.Post;
 import com.example.smartcloset.board.model.LikeEntity;
 import com.example.smartcloset.board.repository.PostRepository;
 import com.example.smartcloset.board.repository.LikeRepository;
@@ -25,7 +26,6 @@ import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.time.LocalDateTime;
 import java.util.List;
-
 import java.util.stream.Collectors;
 
 @Service
@@ -47,38 +47,42 @@ public class PostService {
         this.eventPublisher = eventPublisher;
     }
 
-    public List<Post> getAllPosts() {
-        // User 정보를 함께 로드하는 JPQL 쿼리 사용
-        return postRepository.findAllWithUser();
+    public List<PostDTO> getAllPosts() {
+        List<Post> posts = postRepository.findAllWithUser();
+        return posts.stream().map(this::convertToDto).collect(Collectors.toList());
     }
 
-    public Post getPostById(Long id) {
-        return postRepository.findById(id).orElseThrow(() -> new RuntimeException("Post not found"));
+    public PostDTO getPostById(Long id) {
+        Post post = postRepository.findById(id).orElseThrow(() -> new RuntimeException("Post not found"));
+        return convertToDto(post);
     }
 
-
-    public List<Post> getPostsByUser(User user) {
-        // 특정 사용자가 작성한 게시글 목록을 반환하는 로직을 구현합니다.
-        return postRepository.findByUser(user);
+    public List<PostDTO> getPostsByUser(User user) {
+        List<Post> posts = postRepository.findByUser(user);
+        return posts.stream().map(this::convertToDto).collect(Collectors.toList());
     }
 
-    public List<Post> searchPostsByTitle(String title) {
-        return postRepository.findByTitleContainingIgnoreCase(title);
+    public List<PostDTO> searchPostsByTitle(String title) {
+        List<Post> posts = postRepository.findByTitleContainingIgnoreCase(title);
+        return posts.stream().map(this::convertToDto).collect(Collectors.toList());
     }
 
-    public Post savePost(Post post) {
-        return postRepository.save(post);
+    public PostDTO savePost(PostDTO postDto) {
+        Post post = convertToEntity(postDto);
+        Post savedPost = postRepository.save(post);
+        return convertToDto(savedPost);
     }
 
-    public Post updatePost(Long id, Post updatedPost) {
+    public PostDTO updatePost(Long id, PostDTO postDto) {
         Post existingPost = postRepository.findById(id)
                 .orElseThrow(() -> new RuntimeException("Post not found"));
 
-        existingPost.setTitle(updatedPost.getTitle());
-        existingPost.setContent(updatedPost.getContent());
-        existingPost.setImageUrl(updatedPost.getImageUrl());
+        existingPost.setTitle(postDto.getTitle());
+        existingPost.setContent(postDto.getContent());
+        existingPost.setImageUrl(postDto.getImageUrl());
 
-        return postRepository.save(existingPost);
+        Post updatedPost = postRepository.save(existingPost);
+        return convertToDto(updatedPost);
     }
 
     public List<CommentEntity> getCommentsByPostId(Long postId) {
@@ -140,7 +144,6 @@ public class PostService {
         if (!postRepository.existsById(id)) {
             return false;  // 게시물이 존재하지 않는 경우 false 반환
         }
-        // 외래 키 제약 조건으로 인해 먼저 대댓글 및 부모 댓글을 삭제
         commentRepository.deleteRepliesByPostId(id); // 대댓글 먼저 삭제
         commentRepository.deleteCommentsByPostId(id); // 부모 댓글 삭제
         likeRepository.deleteByPost(postRepository.findById(id).get());
@@ -148,76 +151,113 @@ public class PostService {
         return true;  // 성공적으로 삭제된 경우 true 반환
     }
 
-    public List<Post> getPostsAfterId(Long lastPostId, int limit) {
-        return postRepository.findByIdGreaterThanOrderByIdAsc(lastPostId, PageRequest.of(0, limit));
+    public List<PostDTO> getPostsAfterId(Long lastPostId, int limit) {
+        List<Post> posts = postRepository.findByIdGreaterThanOrderByIdAsc(lastPostId, PageRequest.of(0, limit));
+        return posts.stream().map(this::convertToDto).collect(Collectors.toList());
     }
 
     @Transactional
-    public Post savePostWithImage(String title, String content, MultipartFile imageFile, User user) throws IOException {
+    public PostDTO savePostWithImage(String title, String content, MultipartFile imageFile, User user) throws IOException {
         if (imageFile == null || imageFile.isEmpty()) {
             throw new IllegalArgumentException("Image file is required.");
         }
 
-        // 클린 파일 이름 생성
         String fileName = System.currentTimeMillis() + "_" + StringUtils.cleanPath(imageFile.getOriginalFilename());
-
-        // 파일 저장 경로 설정
         Path path = Paths.get(uploadDir + fileName);
 
-        // 디렉토리 생성 (존재하지 않는 경우)
         try {
             Files.createDirectories(path.getParent());
         } catch (IOException e) {
             throw new IOException("Could not create directories to save file.", e);
         }
 
-        // 파일을 서버에 저장
         try {
             Files.write(path, imageFile.getBytes());
         } catch (IOException e) {
             throw new IOException("Failed to save image file.", e);
         }
 
-        // Post 객체 생성 및 데이터베이스에 저장
         Post post = new Post();
         post.setTitle(title);
         post.setContent(content);
-        post.setUser(user);  // 사용자 정보 설정
-
-        // 저장된 파일의 URL을 설정
-        String fileDownloadUri = "/uploads/" + fileName; // 파일에 접근할 수 있는 URL 경로를 사용
-        post.setImageUrl(fileDownloadUri);
-
+        post.setUser(user);
+        post.setImageUrl("/uploads/" + fileName);
         post.setDate(LocalDateTime.now());
 
-        try {
-            return postRepository.save(post);
-        } catch (Exception e) {
-            throw new RuntimeException("Failed to save post to database.", e);
-        }
+        Post savedPost = postRepository.save(post);
+        return convertToDto(savedPost);
     }
 
-    public List<Post> getLikedPostsByUser(User user) {
-        return likeRepository.findByUser(user).stream()
+    public List<PostDTO> getLikedPostsByUser(User user) {
+        List<LikeEntity> likedEntities = likeRepository.findByUser(user);
+        return likedEntities.stream()
                 .map(LikeEntity::getPost)
+                .map(this::convertToDto)
                 .collect(Collectors.toList());
     }
 
-    public List<Post> getLikedPostsByUserWithScroll(User user, Long lastLikedId, int limit) {
+    public List<PostDTO> getLikedPostsByUserWithScroll(User user, Long lastLikedId, int limit) {
         Pageable pageable = PageRequest.of(0, limit, Sort.by(Sort.Direction.DESC, "createdDate"));
 
-        // `lastLikedId`가 있는 경우 이후의 좋아요들을 조회합니다.
+        List<Post> likedPosts;
         if (lastLikedId != null) {
-            return likeRepository.findByUserAndIdLessThanOrderByCreatedDateDesc(user, lastLikedId, pageable)
+            likedPosts = likeRepository.findByUserAndIdLessThanOrderByCreatedDateDesc(user, lastLikedId, pageable)
                     .stream()
                     .map(LikeEntity::getPost)
                     .collect(Collectors.toList());
         } else {
-            // 첫 페이지 로드
-            return likeRepository.findByUserOrderByCreatedDateDesc(user, pageable)
+            likedPosts = likeRepository.findByUserOrderByCreatedDateDesc(user, pageable)
                     .stream()
                     .map(LikeEntity::getPost)
                     .collect(Collectors.toList());
         }
+
+        return likedPosts.stream().map(this::convertToDto).collect(Collectors.toList());
+    }
+
+    public PostDTO convertToDto(Post post) {
+        if (post == null) {
+            System.out.println("Post is null.");
+            return null; // null 체크 추가
+        }
+
+        User user = post.getUser(); // 게시물 작성자 정보 가져오기
+
+        if (user == null) {
+            System.out.println("User is null for Post ID: " + post.getId());
+        } else {
+            System.out.println("User ID: " + user.getId() + ", User Name: " + user.getNickname());
+        }
+
+        return new PostDTO(
+                post.getId(),
+                post.getTitle(),
+                post.getContent(),
+                post.getLikes(),
+                post.getDate(),
+                post.getImageUrl(),
+                post.getCommentsCount(),
+                user != null ? user.getId() : null, // 사용자 null 체크
+                user != null ? user.getNickname() : null, // user.getNickname() 사용
+                user != null ? user.getLoginId() : null  // user.getLoginId() 사용
+        );
+    }
+
+    // DTO를 엔티티로 변환하는 메서드
+    public Post convertToEntity(PostDTO postDto) {
+        User user = new User(); // 실제로는 사용자 조회 로직이 필요합니다.
+        user.setId(postDto.getUserId());
+
+        Post post = new Post();
+        post.setId(postDto.getId());
+        post.setTitle(postDto.getTitle());
+        post.setContent(postDto.getContent());
+        post.setLikes(postDto.getLikes());
+        post.setDate(postDto.getDate());
+        post.setImageUrl(postDto.getImageUrl());
+        post.setCommentsCount(postDto.getCommentsCount());
+        post.setUser(user);
+
+        return post;
     }
 }

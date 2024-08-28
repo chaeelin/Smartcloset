@@ -25,11 +25,10 @@ public class Post {
     private String imageUrl;
     private int commentsCount;
 
-    @ManyToOne(fetch = FetchType.LAZY) // Lazy Loading으로 변경하여 필요할 때만 로드되도록 설정
+    @ManyToOne(fetch = FetchType.EAGER) // EAGER 로딩으로 변경
     @JoinColumn(name = "user_id", nullable = false)
-    @JsonManagedReference // JSON 직렬화 시 참조 관리
+    @JsonManagedReference
     private User user;
-
     // 댓글과의 연관 관계 설정
     @OneToMany(mappedBy = "post", cascade = CascadeType.ALL, orphanRemoval = true)
     private List<CommentEntity> comments;  // 댓글 리스트 추가

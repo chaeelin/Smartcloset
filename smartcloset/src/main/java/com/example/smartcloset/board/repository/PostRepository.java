@@ -19,6 +19,6 @@ public interface PostRepository extends JpaRepository<Post, Long> {
     // 특정 사용자가 작성한 게시물을 가져오는 메서드 추가
     List<Post> findByUser(User user);
 
-    @Query("SELECT p FROM Post p JOIN FETCH p.user")
+    @Query("SELECT p FROM Post p LEFT JOIN FETCH p.user")
     List<Post> findAllWithUser();
 }
