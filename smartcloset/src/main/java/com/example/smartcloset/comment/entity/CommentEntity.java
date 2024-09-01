@@ -41,12 +41,4 @@ public class CommentEntity {
     @JoinColumn(name = "user_id")
     private User user;
 
-    public CommentResponseDto toCommentResponseDto(){
-        return CommentResponseDto.builder()
-                .commentId(this.id).content(this.content)
-                .reportCount(this.reportCount)
-                .parentId(this.parent!=null? parent.id : null)
-                .userName(this.user.getNickname())
-                .build();
-    }
 }

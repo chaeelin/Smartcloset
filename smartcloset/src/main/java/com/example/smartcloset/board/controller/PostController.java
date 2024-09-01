@@ -207,15 +207,6 @@ public class PostController {
         return ResponseEntity.ok(postDtos);
     }
 
-    @GetMapping("/{postId}/comments")
-    public ResponseEntity<List<CommentEntity>> getCommentsByPostId(@PathVariable Long postId) {
-        List<CommentEntity> comments = postService.getCommentsByPostId(postId);
-        if (comments.isEmpty()) {
-            return ResponseEntity.notFound().build();
-        }
-        return ResponseEntity.ok(comments);
-    }
-
     @GetMapping("/liked")
     public ResponseEntity<List<PostDTO>> getLikedPosts(Principal principal) {
         User user = userService.getUserByPrincipal(principal);

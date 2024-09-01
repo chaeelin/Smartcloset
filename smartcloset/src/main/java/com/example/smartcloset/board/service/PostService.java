@@ -88,10 +88,6 @@ public class PostService {
         return convertToDto(updatedPost);
     }
 
-    public List<CommentEntity> getCommentsByPostId(Long postId) {
-        return commentRepository.findAllByPostId(postId);
-    }
-
     public void incrementCommentCount(Long postId) {
         Post post = postRepository.findById(postId)
                 .orElseThrow(() -> new IllegalArgumentException("Invalid post ID"));

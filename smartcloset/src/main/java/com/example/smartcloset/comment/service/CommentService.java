@@ -102,7 +102,6 @@ public class CommentService {
     }
 
     public List<CommentResponseDto> getAll(Long postId) {
-        List<CommentEntity> commentEntities = commentRepository.findAllByPostId(postId);
-        return commentEntities.stream().map(CommentEntity::toCommentResponseDto).toList();
+        return commentRepository.findAllByPostId(postId);
     }
 }
