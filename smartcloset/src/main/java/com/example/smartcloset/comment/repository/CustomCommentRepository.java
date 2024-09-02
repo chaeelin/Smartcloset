@@ -20,5 +20,5 @@ public interface CustomCommentRepository {
 
     Optional<CommentEntity> findByIdWithUser(Long commentId);
 
-    List<CommentResponseDto> findAllByPostId(Long postId);
+    List<CommentResponseDto> findCommentsByPostId(Long postId, Long lastCommentId);
 }

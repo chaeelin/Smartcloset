@@ -62,8 +62,11 @@ public class CommentController {
      * 특정 게시물의 전체 댓글 조회 -> 성능상 문제가 있을 시 페이지네이션 추가
      */
     @GetMapping("/{postId}")
-    public ResponseEntity<?> getComments(@PathVariable(name = "postId") Long postId) {
-        List<CommentResponseDto> commentResponseDtos = commentService.getAll(postId);
+    public ResponseEntity<?> getComments(
+            @PathVariable(name = "postId") Long postId,
+            @RequestParam(name = "lastCommentId", required = false) Long lastCommentId) {
+        List<CommentResponseDto> commentResponseDtos =
+                commentService.getComments(postId, lastCommentId);
         return Response.onSuccess(commentResponseDtos);
     }
 }

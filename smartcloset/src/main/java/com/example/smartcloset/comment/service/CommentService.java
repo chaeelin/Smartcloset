@@ -101,7 +101,7 @@ public class CommentService {
         }
     }
 
-    public List<CommentResponseDto> getAll(Long postId) {
-        return commentRepository.findAllByPostId(postId);
+    public List<CommentResponseDto> getComments(Long postId, Long lastCommentId) {
+        return commentRepository.findCommentsByPostId(postId, lastCommentId);
     }
 }

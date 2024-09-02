@@ -4,6 +4,7 @@ import com.example.smartcloset.comment.dto.CommentResponseDto;
 import com.example.smartcloset.comment.dto.QCommentResponseDto;
 import com.example.smartcloset.comment.entity.CommentEntity;
 import com.example.smartcloset.comment.entity.QCommentEntity;
+import com.querydsl.core.types.dsl.BooleanExpression;
 import com.querydsl.jpa.impl.JPAQueryFactory;
 import lombok.RequiredArgsConstructor;
 import org.springframework.jdbc.core.BatchPreparedStatementSetter;
@@ -66,7 +67,7 @@ public class CustomCommentRepositoryImpl implements CustomCommentRepository {
     }
 
     @Override
-    public List<CommentResponseDto> findAllByPostId(Long postId) {
+    public List<CommentResponseDto> findCommentsByPostId(Long postId, Long lastCommentId) {
         QCommentEntity parent = new QCommentEntity("parent");
         return jpaQueryFactory
                 .select(new QCommentResponseDto(
@@ -79,7 +80,9 @@ public class CustomCommentRepositoryImpl implements CustomCommentRepository {
                 .from(commentEntity)
                 .join(commentEntity.user, user)
                 .leftJoin(commentEntity.parent, parent)
+                .where(commentIdGoe(lastCommentId))
                 .orderBy(commentEntity.id.asc())
+                .limit(3)
                 .fetch();
 
     }
@@ -90,5 +93,9 @@ public class CustomCommentRepositoryImpl implements CustomCommentRepository {
                 .where(commentEntity.post.id.eq(postId)
                         .and(commentEntity.parent.id.isNotNull()))
                 .execute();
+    }
+
+    private BooleanExpression commentIdGoe(Long commentId){
+        return commentId!=null ? commentEntity.id.gt(commentId) : null;
     }
 }
