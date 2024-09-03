@@ -80,7 +80,7 @@ public class CustomCommentRepositoryImpl implements CustomCommentRepository {
                 .from(commentEntity)
                 .join(commentEntity.user, user)
                 .leftJoin(commentEntity.parent, parent)
-                .where(commentIdGoe(lastCommentId))
+                .where(commentIdGt(lastCommentId))
                 .orderBy(commentEntity.id.asc())
                 .limit(3)
                 .fetch();
@@ -95,7 +95,7 @@ public class CustomCommentRepositoryImpl implements CustomCommentRepository {
                 .execute();
     }
 
-    private BooleanExpression commentIdGoe(Long commentId){
+    private BooleanExpression commentIdGt(Long commentId){
         return commentId!=null ? commentEntity.id.gt(commentId) : null;
     }
 }
