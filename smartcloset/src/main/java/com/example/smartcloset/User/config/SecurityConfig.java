@@ -62,6 +62,7 @@ public class SecurityConfig {
                         .requestMatchers("/api/users/check/loginId").permitAll()
                         .requestMatchers("/error").permitAll()
                         .requestMatchers("/bot/chat").permitAll()
+                        .requestMatchers("/s3/image").permitAll()
 
                         // 게시판 관련 요청
                         .requestMatchers(HttpMethod.GET, "/api/posts").permitAll() // 모든 사용자가 게시글 조회 가능

@@ -39,3 +39,4 @@ out/
 # .gitignore에 추가
 smartcloset/src/main/resources/application.properties
 /src/main/resources/firebase_service_key.json
+/src/main/resources/application.yml
