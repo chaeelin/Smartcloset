@@ -16,11 +16,11 @@ public class AmazonS3Controller {
     private final AwsS3Service awsS3Service;
 
     @PostMapping("/image")
-    public ResponseEntity<String> uploadImage(@RequestPart MultipartFile multipartFile) {
+    public ResponseEntity<String> uploadImage(@RequestParam("multipartFile") MultipartFile multipartFile) {
         return ApiResponse.success(awsS3Service.uploadImage(multipartFile));
     }
 
-    @DeleteMapping("/image")
+    @DeleteMapping("/image/delete")
     public ResponseEntity<Void> deleteImage(@RequestParam String fileName) {
         awsS3Service.deleteImage(fileName);
         return ApiResponse.success(null);
