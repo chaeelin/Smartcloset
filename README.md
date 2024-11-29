@@ -62,8 +62,18 @@
 
 ---
 
+## 주요기능 및 구조도
+<img width="343" alt="image" src="https://github.com/user-attachments/assets/8620a032-8010-4795-92ac-f449160a2605">
+
 
 ---
+
+## 시스템 구성 및 아키텍처
+<img width="343" alt="image" src="https://github.com/user-attachments/assets/8620a032-8010-4795-92ac-f449160a2605">
+
+
+---
+
 
 ## 기타
 이 프로젝트는 일상 속에서 옷차림 고민을 덜어주고, 사용자의 스타일에 맞는 패션 경험을 제공합니다. 패션 초보자부터 관심이 많은 사용자까지 누구나 활용할 수 있는 시스템입니다. 
