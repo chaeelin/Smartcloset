@@ -69,7 +69,7 @@
 ---
 
 ## 시스템 구성 및 아키텍처
-<img width="343" alt="image" src="https://github.com/user-attachments/assets/8620a032-8010-4795-92ac-f449160a2605">
+<img width="341" alt="image" src="https://github.com/user-attachments/assets/3a04634b-43b9-4c4a-b1f5-a4db03619e3f">
 
 
 ---
