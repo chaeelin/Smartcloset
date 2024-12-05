@@ -57,8 +57,7 @@
 
 ## 깃허브 및 배포 URL
 - **프론트엔드 레포지토리:** [GitHub Frontend Repo](https://github.com/OSP-smartcloset/Frontend-repo)  
-- **백엔드 레포지토리:** [GitHub Backend Repo](https://github.com/OSP-smartcloset/Backend_repo)  
-- **배포 주소:** [http://ec2-13-124-254-196.ap-northeast-2.compute.amazonaws.com:8080/](http://ec2-13-124-254-196.ap-northeast-2.compute.amazonaws.com:8080/)
+- **백엔드 레포지토리:** [GitHub Backend Repo](https://github.com/OSP-smartcloset/Backend_repo) 
 
 ---
 
