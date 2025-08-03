@@ -40,10 +40,13 @@
 ---
 
 ## 개발 환경
-- **언어 및 프레임워크:** Java, Spring Boot, React, TypeScript
-- **데이터베이스:** MySQL, Spring JPA
-- **기타 도구:** Redis, IntelliJ, Postman  
-- **배포:** AWS EC2  
+
+| Category              | Tech Stack |
+|-----------------------|------------|
+| **Language / Framework** | ![Java](https://img.shields.io/badge/Java-007396?style=flat-square&logo=java&logoColor=white) ![Spring Boot](https://img.shields.io/badge/Spring%20Boot-6DB33F?style=flat-square&logo=springboot&logoColor=white) ![React](https://img.shields.io/badge/React-61DAFB?style=flat-square&logo=react&logoColor=black) ![TypeScript](https://img.shields.io/badge/TypeScript-3178C6?style=flat-square&logo=typescript&logoColor=white) |
+| **Database**          | ![MySQL](https://img.shields.io/badge/MySQL-4479A1?style=flat-square&logo=mysql&logoColor=white) ![Spring Data JPA](https://img.shields.io/badge/Spring%20JPA-6DB33F?style=flat-square&logo=spring&logoColor=white) |
+| **Etc Tools**         | ![Redis](https://img.shields.io/badge/Redis-DC382D?style=flat-square&logo=redis&logoColor=white) ![IntelliJ IDEA](https://img.shields.io/badge/IntelliJ%20IDEA-000000?style=flat-square&logo=intellijidea&logoColor=white) ![Postman](https://img.shields.io/badge/Postman-FF6C37?style=flat-square&logo=postman&logoColor=white) |
+| **Deployment**        | ![AWS EC2](https://img.shields.io/badge/AWS%20EC2-FF9900?style=flat-square&logo=amazonaws&logoColor=white) |
 
 ---
 
